@@ -18,9 +18,32 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	// 1. Web & Template Engine (Phục vụ kiến trúc Monolithic)
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	
+	// 2. Database (JPA & MySQL Driver)
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	
+	// 3. Bảo mật & Kiểm tra dữ liệu đầu vào (Validation)
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	
+	// 4. Lombok (BẮT BUỘC phải đi liền 2 dòng này để tự sinh code Get/Set)
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	// 5. Hệ thống Test (Thu gọn lại đúng chuẩn Spring Boot)
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
+	// Hỗ trợ Lombok nếu em có viết mã tiện ích trong thư mục test
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+
 }
 
 tasks.named('test') {
