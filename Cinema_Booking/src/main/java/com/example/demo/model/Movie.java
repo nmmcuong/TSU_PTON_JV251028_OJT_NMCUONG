@@ -1,10 +1,10 @@
 package com.example.demo.model;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-
 import com.example.demo.enums.MovieStatus;
 
 @Entity
@@ -45,10 +45,9 @@ public class Movie {
     @Enumerated(EnumType.STRING)
     private MovieStatus status;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    // Thiết lập mối quan hệ Nhiều-Nhiều với bảng trung gian movie_genres
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "movie_genres",
@@ -58,5 +57,19 @@ public class Movie {
     private List<Genre> genres;
 
     @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Showtime> showtimes;
+
+    // Tự động gán thời gian tạo khi thêm mới phim
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        if (this.status == null) {
+            this.status = MovieStatus.COMING_SOON; // Mặc định khi thêm mới là Sắp chiếu
+        }
+    }
+    
+    public void setGenres(List<Genre> genres) { this.genres = genres; }
+    public void setStatus(MovieStatus status) { this.status = status; }
 }

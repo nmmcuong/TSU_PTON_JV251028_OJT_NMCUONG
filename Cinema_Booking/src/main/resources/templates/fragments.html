@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="html_head(title)">
+    <meta charset="UTF-8">
+    <title th:text="${title}">Smart Cinema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Style cho Slide mượt mà */
+        .slide-carousel { display: none; }
+        .slide-carousel.active { display: flex; animation: fadeEffect 0.6s ease-in-out; }
+        @keyframes fadeEffect { from { opacity: 0.4; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+	<header th:fragment="common_header" class="fixed top-0 left-0 right-0 h-20 bg-black backdrop-blur-md border-b border-amber-500/20 px-6 md:px-12 flex justify-between items-center z-50 shadow-lg text-white">
+	    
+	    <div class="flex items-center space-x-2">
+	        <a href="/" class="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 hover:opacity-90 transition">
+	            SMART CINEMA
+	        </a>
+	    </div>
+
+	    <nav class="hidden md:flex items-center space-x-8 font-medium text-sm tracking-wider text-stone-300">
+	        <a href="/" class="hover:text-amber-400 transition pb-1">TRANG CHỦ</a>
+	        <a href="#" class="hover:text-amber-400 transition pb-1">PHIM ĐANG CHIẾU</a>
+	        <a href="#" class="hover:text-amber-400 transition pb-1">PHIM SẮP CHIẾU</a>
+	        <a href="#" class="hover:text-amber-400 transition pb-1">LỊCH CHIẾU</a>
+	        
+	        <th:block th:if="${currentUser != null && currentUser.role.name() == 'ADMIN'}">
+	            <a href="/admin/reports" class="hover:text-amber-400 transition pb-1 text-red-400 font-semibold">DOANH THU</a>
+	            <a href="/admin/movies" class="hover:text-amber-400 transition pb-1 text-red-400 font-semibold">QUẢN LÝ PHIM</a>
+	            <a href="/admin/showtimes" class="hover:text-amber-400 transition pb-1 text-red-400 font-semibold">SẮP XẾP LỊCH CHIẾU</a>
+	        </th:block>
+	    </nav>
+
+	    <div class="flex items-center space-x-4">
+	        
+	        <div th:if="${currentUser == null}" class="flex items-center space-x-3 text-sm font-semibold tracking-wide">
+	            <a th:href="@{/login}" class="text-stone-300 hover:text-white px-3 py-2 transition">Đăng nhập</a>
+	            <a th:href="@{/register}" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-black px-4 py-2 rounded-full shadow-md transition duration-300">Đăng ký</a>
+	        </div>
+
+	        <div th:if="${currentUser != null}" class="relative inline-block text-left">
+	            <a id="userMenuBtn" class="inline-flex items-center text-sm font-semibold text-amber-400 hover:underline cursor-pointer transition duration-200 space-x-1 select-none py-2">
+	                <span>👑</span> <span th:text="${currentUser.fullName}">Người dùng</span>
+	                <svg class="h-4 w-4 opacity-80 ml-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+	                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+	                </svg>
+	            </a>
+
+	            <div id="userDropdown" class="hidden origin-top-right absolute right-0 mt-3 w-56 rounded-md shadow-2xl bg-stone-900 border border-stone-800 ring-1 ring-black ring-opacity-5 divide-y divide-stone-800 focus:outline-none z-50">
+	                
+	                <div class="py-1">
+	                    <a th:href="@{/profile}" class="text-stone-300 block px-4 py-2 text-sm hover:bg-stone-800 hover:text-amber-400 transition flex items-center space-x-2">
+	                        <span>ℹ️</span> <span>Hồ sơ cá nhân</span>
+	                    </a>
+	                </div>
+
+	                <div class="py-1" th:if="${currentUser.role.name() == 'USER'}">
+	                    <a href="/bookings/history" class="text-stone-300 block px-4 py-2 text-sm hover:bg-stone-800 hover:text-amber-400 transition flex items-center space-x-2">
+	                        <span>🎟️</span> <span>Lịch sử mua vé</span>
+	                    </a>
+	                    <a href="/movies" class="text-stone-300 block px-4 py-2 text-sm hover:bg-stone-800 hover:text-amber-400 transition flex items-center space-x-2">
+	                        <span>🎬</span> <span>Xem danh sách phim</span>
+	                    </a>
+	                </div>
+
+	                <div class="py-1" th:if="${currentUser.role.name() == 'STAFF'}">
+	                    <a href="/staff/tickets/check" class="text-stone-300 block px-4 py-2 text-sm hover:bg-stone-800 hover:text-amber-400 transition flex items-center space-x-2">
+	                        <span>🖨️</span> <span>Kiểm tra vé</span>
+	                    </a>
+	                </div>
+
+	                <div class="py-1">
+	                    <form th:action="@{/logout}" method="POST" class="block w-full">
+	                        <button type="submit" class="text-stone-400 w-full text-left px-4 py-2 text-sm hover:bg-stone-800 hover:text-red-400 transition flex items-center space-x-2 font-medium">
+	                            <span>🚪</span> <span>Đăng xuất</span>
+	                        </button>
+	                    </form>
+	                </div>
+	            </div>
+	        </div>
+
+	    </div>
+	</header>
+
+    <footer th:fragment="common_footer" class="bg-stone-900 text-stone-400 text-sm mt-auto border-t border-stone-800 w-full">
+        <div class="max-w-7xl mx-auto px-6 md:px-12 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-4">
+                <h3 class="text-white font-black tracking-widest text-lg">SMART CINEMA</h3>
+                <p class="text-xs leading-relaxed">Hệ thống rạp chiếu phim tiêu chuẩn quốc tế mang lại trải nghiệm điện ảnh chân thực và đẳng cấp nhất.</p>
+            </div>
+            <div class="space-y-3">
+                <h4 class="text-white font-bold text-xs uppercase tracking-wider">Chính sách & Quy định</h4>
+                <ul class="space-y-2 text-xs">
+                    <li><a href="#" class="hover:text-amber-400 transition">Chính sách bảo mật</a></li>
+                    <li><a href="#" class="hover:text-amber-400 transition">Chính sách hoàn vé</a></li>
+                </ul>
+            </div>
+            <div class="space-y-3">
+                <h4 class="text-white font-bold text-xs uppercase tracking-wider">Chăm sóc khách hàng</h4>
+                <ul class="space-y-2 text-xs">
+                    <li><a href="#" class="hover:text-amber-400 transition">Hệ thống rạp toàn quốc</a></li>
+                    <li><a href="#" class="hover:text-amber-400 transition">Tuyển dụng</a></li>
+                </ul>
+            </div>
+            <div class="space-y-3">
+                <h4 class="text-white font-bold text-xs uppercase tracking-wider">Kết nối với chúng tôi</h4>
+                <p class="text-[11px] text-stone-500">© 2026 Smart Cinema. All rights reserved.</p>
+            </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const menuBtn = document.getElementById('userMenuBtn');
+                const dropdown = document.getElementById('userDropdown');
+                if(menuBtn && dropdown) {
+                    menuBtn.addEventListener('click', function(e) { dropdown.classList.toggle('hidden'); e.stopPropagation(); });
+                    document.addEventListener('click', function() { dropdown.classList.add('hidden'); });
+                    dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+                }
+            });
+        </script>
+    </footer>
+
+</body>
+</html>

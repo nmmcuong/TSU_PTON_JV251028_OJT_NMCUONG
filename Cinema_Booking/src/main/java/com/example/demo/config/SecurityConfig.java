@@ -22,18 +22,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests(auth -> auth
-                // 1. Ai cũng có thể truy cập các trang này
-                .requestMatchers("/register", "/login", "/css/**", "/js/**").permitAll()
-                
-                // 2. Phân quyền nghiêm ngặt theo vai trò (Role)
-                // Lưu ý: .hasRole("ADMIN") tự hiểu là cần Authority dạng "ROLE_ADMIN" (đã cấu hình ở CustomUserDetailsService)
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/staff/**").hasAnyRole("STAFF", "ADMIN") // Nhân viên hoặc Admin đều vào được
-                
-                // 3. Khách hàng và các vai trò trên sau khi login đều vào được các vùng còn lại
-                .anyRequest().authenticated()
-            )
+        .authorizeHttpRequests(auth -> auth
+        	    // CHÍ MẠNG: Cho phép TRANG CHỦ "/" truy cập tự do không cần login, kèm các trang tĩnh và auth
+        	    .requestMatchers("/", "/register", "/login", "/css/**", "/js/**").permitAll()
+        	    
+        	    // Các vùng quản trị nghiêm ngặt giữ nguyên
+        	    .requestMatchers("/admin/**").hasRole("ADMIN")
+        	    .requestMatchers("/staff/**").hasAnyRole("STAFF", "ADMIN")
+        	    
+        	    // Các tính năng như Đặt vé, Profile, Thanh toán thì bắt buộc đăng nhập mới được vào
+        	    .anyRequest().authenticated()
+        	)
             .formLogin(login -> login
                 .loginPage("/login")
                 .loginProcessingUrl("/login")

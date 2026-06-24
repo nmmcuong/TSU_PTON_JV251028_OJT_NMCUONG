@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: html_head('Quản Lý Phim - Admin')}"></head>
+<body class="bg-gray-50 min-h-screen font-sans pt-28 flex flex-col">
+
+    <div th:replace="~{fragments :: common_header}"></div>
+
+    <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 flex-grow w-full">
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center border-b pb-4 mb-6">
+                <div>
+                    <h2 class="text-2xl font-black text-stone-900 tracking-wide">🎬 DANH MỤC QUẢN LÝ PHIM</h2>
+                </div>
+                <a th:href="@{/admin/movies/create}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 py-2.5 rounded-full transition shadow-sm uppercase">
+                    + Thêm Phim Mới
+                </a>
+            </div>
+
+            <div th:if="${param.success}" class="mb-4 bg-green-100 text-green-700 p-3 rounded-lg text-xs font-semibold">🎉 Đã cập nhật phim thành công!</div>
+            <div th:if="${param.deleted}" class="mb-4 bg-amber-100 text-amber-700 p-3 rounded-lg text-xs font-semibold">🔒 Phim đã được chuyển sang trạng thái Ngừng chiếu.</div>
+
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-stone-900 text-white text-xs uppercase tracking-wider">
+                        <th class="p-4 rounded-l-lg">Poster</th>
+                        <th class="p-4">Tên Phim</th>
+                        <th class="p-4">Thể Loại</th>
+                        <th class="p-4">Thời Lượng</th>
+                        <th class="p-4 text-center">Trạng Thái</th>
+                        <th class="p-4 text-center rounded-r-lg">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-gray-100 text-stone-700">
+                    <tr th:each="movie : ${movies}">
+                        <td class="p-4">
+                            <img th:src="${movie.posterUrl}" class="w-12 h-16 object-cover rounded shadow-sm" alt="Poster">
+                        </td>
+                        <td class="p-4 font-bold text-stone-900" th:text="${movie.title}"></td>
+                        <td class="p-4">
+                            <span th:each="g : ${movie.genres}" class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded border mr-1" th:text="${g.name}"></span>
+                        </td>
+                        <td class="p-4" th:text="${movie.duration + ' phút'}"></td>
+                        <td class="p-4 text-center">
+                            <span th:if="${movie.enabled}" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">● Đang Chiếu</span>
+                            <span th:if="${!movie.enabled}" class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold">● Ngừng Chiếu</span>
+                        </td>
+                        <td class="p-4 text-center space-x-2">
+                            <a th:href="@{/admin/movies/edit/{id}(id=${movie.id})}" class="text-amber-600 font-bold text-xs underline">Sửa</a>
+                            <a th:if="${movie.enabled}" th:href="@{/admin/movies/delete/{id}(id=${movie.id})}" onclick="return confirm('Ngừng chiếu phim này?')" class="text-red-500 font-bold text-xs underline ml-2">Xóa</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments :: common_footer}"></div>
+</body>
+</html>

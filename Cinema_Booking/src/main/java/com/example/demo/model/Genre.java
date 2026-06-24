@@ -1,4 +1,5 @@
 package com.example.demo.model;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -19,5 +20,12 @@ public class Genre {
     private String genreName;
 
     @ManyToMany(mappedBy = "genres", fetch = FetchType.LAZY)
+    @ToString.Exclude 
+    @EqualsAndHashCode.Exclude
     private List<Movie> movies;
+
+    
+    public Genre(String genreName) {
+        this.genreName = genreName;
+    }
 }

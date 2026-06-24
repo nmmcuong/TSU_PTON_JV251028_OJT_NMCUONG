@@ -1,52 +1,66 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Đăng Ký Tài Khoản</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center py-10">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
-        <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">ĐĂNG KÝ TÀI KHOẢN</h2>
-        
-        <div th:if="${errorMessage}" class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 p-3 rounded text-sm" th:text="${errorMessage}"></div>
+<head th:replace="~{fragments :: html_head('Smart Cinema - Đăng Ký Thành Viên')}"></head>
+<body class="bg-gray-100 min-h-screen font-sans pt-28 flex flex-col">
 
-        <form th:action="@{/register}" th:object="${userDto}" method="POST" class="space-y-4">
-            <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-1">Tên đăng nhập *</label>
-                <input type="text" th:field="*{username}" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="text-red-500 text-xs mt-1"></p>
+    <div th:replace="~{fragments :: common_header}"></div>
+
+    <div class="max-w-lg w-full mx-auto my-auto px-4 flex-grow flex items-center justify-center pb-12">
+        <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-200 w-full">
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-black text-stone-900 tracking-wide">ĐĂNG KÝ</h2>
+                <p class="text-gray-500 text-xs mt-2">Trở thành thành viên để nhận ngập tràn ưu đãi vé xem phim</p>
             </div>
-            <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-1">Mật khẩu *</label>
-                <input type="password" th:field="*{password}" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="text-red-500 text-xs mt-1"></p>
+
+            <div th:if="${error}" class="mb-4 bg-red-100 text-red-700 p-3 rounded-lg text-xs font-medium" th:text="${error}"></div>
+            <div th:if="${success}" class="mb-4 bg-green-100 text-green-700 p-3 rounded-lg text-xs font-medium text-center">🎉 Đăng ký thành công! Hãy chuyển sang Đăng nhập.</div>
+
+            <form th:action="@{/register}" method="POST" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Tên đăng nhập *</label>
+                        <input type="text" name="username" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition"
+                               placeholder="Tên tài khoản">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Họ và tên *</label>
+                        <input type="text" name="fullName" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition"
+                               placeholder="Nguyễn Văn A">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Email liên hệ *</label>
+                    <input type="email" name="email" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition"
+                           placeholder="example@gmail.com">
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Mật khẩu *</label>
+                    <input type="password" name="password" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition"
+                           placeholder="Tối thiểu 6 ký tự">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" 
+                            class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold py-3 rounded-lg text-sm shadow-md transition duration-300 uppercase tracking-wider">
+                        Tạo Tài Khoản
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6 text-center text-xs text-gray-500 border-t pt-4">
+                Đã có tài khoản thành viên? 
+                <a th:href="@{/login}" class="text-amber-600 hover:underline font-bold ml-1">Đăng nhập tại đây</a>
             </div>
-            <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-1">Email *</label>
-                <input type="email" th:field="*{email}" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="text-red-500 text-xs mt-1"></p>
-            </div>
-            <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-1">Họ và tên *</label>
-                <input type="text" th:field="*{fullName}" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}" class="text-red-500 text-xs mt-1"></p>
-            </div>
-            <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-1">Số điện thoại</label>
-                <input type="text" th:field="*{phone}" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div>
-                <label class="block text-gray-700 text-sm font-semibold mb-1">Địa chỉ</label>
-                <input type="text" th:field="*{address}" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">
-                Đăng Ký
-            </button>
-        </form>
-        <p class="mt-4 text-sm text-center text-gray-600">
-            Đã có tài khoản? <a th:href="@{/login}" class="text-blue-500 hover:underline">Đăng nhập</a>
-        </p>
+        </div>
     </div>
+
+    <div th:replace="~{fragments :: common_footer}"></div>
+
 </body>
 </html>
