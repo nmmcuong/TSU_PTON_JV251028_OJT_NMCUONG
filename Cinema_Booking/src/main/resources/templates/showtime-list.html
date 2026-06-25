@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: html_head('Quản Lý Lịch Chiếu - Admin')}"></head>
+<body class="bg-gray-50 min-h-screen font-sans pt-28 flex flex-col">
+    <div th:replace="~{fragments :: common_header}"></div>
+
+    <main class="max-w-7xl mx-auto px-6 md:px-12 py-6 flex-grow w-full">
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center border-b pb-4 mb-6">
+                <div>
+                    <h2 class="text-2xl font-black text-stone-900 tracking-wide">📅 SẮP XẾP LỊCH CHIẾU LỚP PHỦ</h2>
+                </div>
+                <a th:href="@{/admin/showtimes/create}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 py-2.5 rounded-full transition shadow-sm uppercase">
+                    + Tạo Suất Chiếu Mới
+                </a>
+            </div>
+
+            <div th:if="${param.success}" class="mb-4 bg-green-100 text-green-700 p-3 rounded-lg text-xs font-semibold">🎉 Lập lịch suất chiếu thành công, không phát hiện xung đột phòng!</div>
+            <div th:if="${param.deleted}" class="mb-4 bg-red-100 text-red-700 p-3 rounded-lg text-xs font-semibold">❌ Đuổi suất chiếu ra khỏi hệ thống thành công.</div>
+
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-stone-900 text-white text-xs uppercase tracking-wider">
+                        <th class="p-4 rounded-l-lg">Phòng Chiếu</th>
+                        <th class="p-4">Tên Bộ Phim</th>
+                        <th class="p-4">Thời Lượng Phim</th>
+                        <th class="p-4">Thời Gian Bắt Đầu</th>
+                        <th class="p-4">Giá Vé (VND)</th>
+                        <th class="p-4 text-center rounded-r-lg">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-gray-100 text-stone-700">
+                    <tr th:each="st : ${showtimes}" class="hover:bg-gray-50/80 transition">
+                        <td class="p-4 font-bold text-stone-900" th:text="${st.room.roomName}"></td>
+                        <td class="p-4 text-amber-600 font-semibold" th:text="${st.movie.title}"></td>
+                        <td class="p-4" th:text="${st.movie.duration + ' phút'}"></td>
+                        <td class="p-4 font-mono text-gray-600" th:text="${#temporals.format(st.startTime, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td class="p-4 font-bold text-green-600" th:text="${#numbers.formatDecimal(st.price, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                        <td class="p-4 text-center">
+                            <a th:href="@{/admin/showtimes/delete/{id}(id=${st.showtimeId})}" onclick="return confirm('Hủy suất chiếu này?')" class="text-red-500 font-bold text-xs underline">Hủy Lịch</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+    <div th:replace="~{fragments :: common_footer}"></div>
+</body>
+</html>

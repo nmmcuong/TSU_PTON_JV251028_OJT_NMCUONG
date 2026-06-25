@@ -15,7 +15,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-    // TỰ VIẾT CONSTRUCTOR THỦ CÔNG Ở ĐÂY:
+
     public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }

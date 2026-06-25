@@ -38,4 +38,22 @@ public class Room {
 
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
     private List<Showtime> showtimes;
+    
+    public Room() {}
+
+    // --- GETTER & SETTER ---
+    public Long getRoomId() { return roomId; }
+    public void setRoomId(Long roomId) { this.roomId = roomId; }
+
+    public String getRoomName() { return roomName; }
+    public void setRoomName(String roomName) { this.roomName = roomName; }
+
+    public Integer getTotalSeats() { return totalSeats; }
+    public void setTotalSeats(Integer totalSeats) { this.totalSeats = totalSeats; }
+
+    public Boolean getStatus() { return status; }
+    public void setStatus(Boolean status) { this.status = status; }
+
+    public List<Showtime> getShowtimes() { return showtimes; }
+    public void setShowtimes(List<Showtime> showtimes) { this.showtimes = showtimes; }
 }

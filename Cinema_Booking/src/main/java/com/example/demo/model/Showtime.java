@@ -1,10 +1,8 @@
 package com.example.demo.model;
+
 import jakarta.persistence.*;
 import lombok.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import com.example.demo.enums.ShowtimeStatus;
 
 @Entity
 @Table(name = "showtimes")
@@ -26,15 +24,28 @@ public class Showtime {
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
 
-    @Column(name = "start_time")
+    @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
 
-    @Column(name = "end_time")
-    private LocalDateTime endTime;
+    @Column(name = "price", nullable = false)
+    private Double price; 
+    
+    public Showtime() {}
 
-    @Column(name = "ticket_price", precision = 10, scale = 2)
-    private BigDecimal ticketPrice;
+    // --- GETTER & SETTER 
+    public Long getShowtimeId() { return showtimeId; }
+    public void setShowtimeId(Long showtimeId) { this.showtimeId = showtimeId; }
 
-    @Enumerated(EnumType.STRING)
-    private ShowtimeStatus status;
+    public Movie getMovie() { return movie; }
+    public void setMovie(Movie movie) { this.movie = movie; }
+
+    public Room getRoom() { return room; }
+    public void setRoom(Room room) { this.room = room; }
+
+    public LocalDateTime getStartTime() { return startTime; }
+    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+
+    public Double getPrice() { return price; }
+    public void setPrice(Double price) { this.price = price; }
+
 }
