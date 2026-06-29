@@ -41,9 +41,10 @@
 
 	    <div class="flex items-center space-x-4">
 	        
-	        <div th:if="${currentUser == null}" class="flex items-center space-x-3 text-sm font-semibold tracking-wide">
+	        <div th:unless="${currentUser != null}" class="flex items-center space-x-3 text-sm font-semibold tracking-wide">
 	            <a th:href="@{/login}" class="text-stone-300 hover:text-white px-3 py-2 transition">Đăng nhập</a>
-	            <a th:href="@{/register}" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-black px-4 py-2 rounded-full shadow-md transition duration-300">Đăng ký</a>
+	            <a th:href="@{/register}" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600
+				 hover:to-yellow-500 text-black px-4 py-2 rounded-full shadow-md transition duration-300">Đăng ký</a>
 	        </div>
 
 	        <div th:if="${currentUser != null}" class="relative inline-block text-left">

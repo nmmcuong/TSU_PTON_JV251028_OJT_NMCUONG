@@ -10,12 +10,12 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 
 @Service
-// XÓA DÒNG @RequiredArgsConstructor NẾU CÒN
+
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
-
+   
     public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }

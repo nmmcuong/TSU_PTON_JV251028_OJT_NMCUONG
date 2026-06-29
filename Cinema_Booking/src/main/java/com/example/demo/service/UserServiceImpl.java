@@ -117,4 +117,17 @@ public class UserServiceImpl implements UserService {
         
         userRepository.save(user); // Cập nhật lại xuống Database
     }
+
+    @Override
+    public User authenticate(String username, String password) {
+        // Sửa lại thành chuỗi này:
+        User user = userRepository.findByUsername(username)
+                                  .orElseThrow(() -> new RuntimeException("User không tồn tại!"));
+
+        // Kiểm tra mật khẩu sau khi chắc chắn user đã tồn tại
+        if (user.getPassword().equals(password)) {
+            return user;
+        }
+        return null;
+    }
 }

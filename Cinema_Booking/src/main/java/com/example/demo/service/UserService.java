@@ -10,6 +10,7 @@ public interface UserService {
     User registerNewUser(UserRegisterDto registerDto);
     User updateUserProfile(String username, UserProfileDto profileDto);
     List<User> getAllUsers();
+    User authenticate(String username, String password);
     void adminUpdateUser(Long id, String fullName, String email, String phone, String role, Boolean enabled);
     void deleteUser(Long id);
 }
