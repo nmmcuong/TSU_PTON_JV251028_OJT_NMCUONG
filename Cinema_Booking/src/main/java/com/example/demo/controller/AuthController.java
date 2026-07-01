@@ -34,9 +34,9 @@ public class AuthController {
     public String login(@RequestParam String username, @RequestParam String password, HttpSession session) {
         User user = userService.authenticate(username, password);
         if (user != null) {
-            
+        	// 1. Lưu vào session
             session.setAttribute("currentUser", user); 
-            return "redirect:/home";
+            return "redirect:/";
         }
         return "login";
     }

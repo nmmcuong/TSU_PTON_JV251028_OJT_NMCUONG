@@ -80,4 +80,11 @@ public class BookingServiceImpl implements BookingService {
         // Lưu xuống DB (Dữ liệu đơn và danh sách ghế được lưu đồng thời trên 1 dòng)
         return bookingRepository.save(booking);
     }
+    
+    @Override
+    public List<Booking> getBookingHistory(Long userId) {
+        // Gọi Repository để lấy danh sách đã được JOIN sẵn phim và suất chiếu
+        return bookingRepository.findBookingHistoryByUserId(userId);
+    }
+    
 }

@@ -39,13 +39,13 @@
 	        </th:block>
 	    </nav>
 
-	    <div class="flex items-center space-x-4">
+		<div class="flex items-center space-x-3 text-sm font-semibold tracking-wide" 
+		     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 	        
-	        <div th:unless="${currentUser != null}" class="flex items-center space-x-3 text-sm font-semibold tracking-wide">
-	            <a th:href="@{/login}" class="text-stone-300 hover:text-white px-3 py-2 transition">Đăng nhập</a>
-	            <a th:href="@{/register}" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600
-				 hover:to-yellow-500 text-black px-4 py-2 rounded-full shadow-md transition duration-300">Đăng ký</a>
-	        </div>
+			 <th:block sec:authorize="isAnonymous()">
+			         <a th:href="@{/login}" class="text-stone-300 hover:text-white px-3 py-2 transition">Đăng nhập</a>
+			         <a th:href="@{/register}" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-black px-4 py-2 rounded-full shadow-md transition duration-300">Đăng ký</a>
+			 </th:block>
 
 	        <div th:if="${currentUser != null}" class="relative inline-block text-left">
 	            <a id="userMenuBtn" class="inline-flex items-center text-sm font-semibold text-amber-400 hover:underline cursor-pointer transition duration-200 space-x-1 select-none py-2">
@@ -64,7 +64,7 @@
 	                </div>
 
 	                <div class="py-1" th:if="${currentUser.role.name() == 'USER'}">
-	                    <a href="/bookings/history" class="text-stone-300 block px-4 py-2 text-sm hover:bg-stone-800 hover:text-amber-400 transition flex items-center space-x-2">
+	                    <a href="/booking/history" class="text-stone-300 block px-4 py-2 text-sm hover:bg-stone-800 hover:text-amber-400 transition flex items-center space-x-2">
 	                        <span>🎟️</span> <span>Lịch sử mua vé</span>
 	                    </a>
 	                    <a href="/movies" class="text-stone-300 block px-4 py-2 text-sm hover:bg-stone-800 hover:text-amber-400 transition flex items-center space-x-2">

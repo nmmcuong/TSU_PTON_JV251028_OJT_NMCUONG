@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: html_head('Smart Cinema - Lịch Sử Đặt Vé')}"></head>
+
+<body class="bg-stone-900 text-stone-100 min-h-screen font-sans pt-20 flex flex-col">
+
+    <div th:replace="~{fragments :: common_header}"></div>
+
+    <main class="max-w-6xl mx-auto px-4 py-10 flex-grow w-full">
+        <h2 class="text-3xl font-bold mb-6 flex items-center gap-2 text-amber-400">
+            🎬 Lịch sử đặt vé của bạn
+        </h2>
+
+        <div th:if="${#lists.isEmpty(historyList)}" class="bg-stone-800 border border-stone-700 text-stone-300 px-4 py-3 rounded-xl shadow-md">
+            Bạn chưa thực hiện giao dịch đặt vé nào!
+        </div>
+
+        <div th:unless="${#lists.isEmpty(historyList)}" class="overflow-x-auto rounded-xl shadow-lg border border-stone-800">
+            <table class="min-w-full divide-y divide-stone-800 text-left text-sm">
+                <thead class="bg-stone-950 text-stone-400 uppercase tracking-wider text-xs">
+                    <tr>
+                        <th class="px-6 py-4">Mã Đơn</th>
+                        <th class="px-6 py-4">Tên Phim</th>
+                        <th class="px-6 py-4">Suất Chiếu</th>
+                        <th class="px-6 py-4">Ghế Ngồi</th>
+                        <th class="px-6 py-4">Tổng Tiền</th>
+                        <th class="px-6 py-4">Trạng Thái</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-800 bg-stone-900/50">
+                    <tr th:each="booking : ${historyList}" class="hover:bg-stone-800/60 transition">
+                        <td th:text="'#' + ${booking.bookingId}" class="px-6 py-4 font-bold text-amber-500"></td>
+                        <td th:text="${booking.showtime.movie.title}" class="px-6 py-4 font-semibold text-white"></td>
+                        <td th:text="${#temporals.format(booking.showtime.startTime, 'dd/MM/yyyy HH:mm')}" class="px-6 py-4 text-stone-300"></td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-1">
+                                <span th:each="seat : ${#strings.arraySplit(booking.bookingSeatArray, ',')}" 
+                                      class="bg-stone-800 text-amber-400 text-xs font-semibold px-2 py-1 rounded border border-stone-700" 
+                                      th:text="${seat}"></span>
+                            </div>
+                        </td>
+                        <td th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'" class="px-6 py-4 font-bold text-red-400"></td>
+                        <td class="px-6 py-4">
+                            <span th:if="${booking.bookingStatus != null && booking.bookingStatus.name() == 'CONFIRMED'}" class="inline-flex items-center bg-green-500/10 text-green-400 px-2.5 py-1 rounded-full text-xs font-medium border border-green-500/20">Thành công</span>
+                            <span th:if="${booking.bookingStatus != null && booking.bookingStatus.name() == 'PENDING'}" class="inline-flex items-center bg-yellow-500/10 text-yellow-400 px-2.5 py-1 rounded-full text-xs font-medium border border-yellow-500/20">Chờ xử lý</span>
+                            <span th:if="${booking.bookingStatus != null && booking.bookingStatus.name() == 'FAILED'}" class="inline-flex items-center bg-red-500/10 text-red-400 px-2.5 py-1 rounded-full text-xs font-medium border border-red-500/20">Thất bại</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div th:replace="~{fragments :: common_footer}"></div>
+</body>
+</html>
