@@ -3,6 +3,8 @@ package com.example.demo.repository;
 import com.example.demo.model.Showtime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,4 +23,5 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Showtime s WHERE s.showtimeId = :id")
     Optional<Showtime> findByIdForBooking(@Param("id") Long id);
+    List<Showtime> findByStartTimeAfterOrderByStartTimeAsc(LocalDateTime now);
 }

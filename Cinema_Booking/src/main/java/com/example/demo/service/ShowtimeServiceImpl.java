@@ -1,9 +1,13 @@
 package com.example.demo.service;
 
+import com.example.demo.model.Booking;
 import com.example.demo.model.Movie;
 import com.example.demo.model.Showtime;
+import com.example.demo.repository.BookingRepository;
 import com.example.demo.repository.MovieRepository;
 import com.example.demo.repository.ShowtimeRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -12,8 +16,12 @@ import java.util.List;
 @Service
 public class ShowtimeServiceImpl implements ShowtimeService {
 
+	@Autowired
     private final ShowtimeRepository showtimeRepository;
     private final MovieRepository movieRepository;
+    
+    @Autowired
+    private BookingRepository bookingRepository;
 
     public ShowtimeServiceImpl(ShowtimeRepository showtimeRepository, MovieRepository movieRepository) {
         this.showtimeRepository = showtimeRepository;
@@ -61,9 +69,40 @@ public class ShowtimeServiceImpl implements ShowtimeService {
         showtimeRepository.save(showtime);
     }
 
-    @Override
-    @Transactional
-    public void deleteShowtime(Long id) {
-        showtimeRepository.deleteById(id);
-    }
-}
+	    @Override
+	    @Transactional
+	    public void deleteShowtime(Long id) {
+	        showtimeRepository.deleteById(id);
+	    }
+	    
+	    public List<Showtime> getAvailableShowtimes() {
+	        // 1. Chỉ lấy các suất chiếu trong tương lai (Xóa/Ẩn các phim đã chiếu xong)
+	        List<Showtime> activeShowtimes = showtimeRepository.findByStartTimeAfterOrderByStartTimeAsc(LocalDateTime.now());
+
+	        // 2. Duyệt qua từng suất để kiểm tra trạng thái "Hết vé" (Sold Out)
+	        for (Showtime showtime : activeShowtimes) {
+	            // Lấy tất cả các đơn đặt vé THÀNH CÔNG (CONFIRMED) của suất chiếu này
+	            List<Booking> confirmedBookings = bookingRepository.findByShowtimeIdAndBookingStatus(showtime.getShowtimeId(), "CONFIRMED");
+	            
+	            int totalBookedSeats = 0;
+	            for (Booking b : confirmedBookings) {
+	                if (b.getBookingSeatArray() != null && !b.getBookingSeatArray().isEmpty()) {
+	                    // Cắt chuỗi ghế "A1,A2" để đếm số lượng ghế đã bán
+	                    totalBookedSeats += b.getBookingSeatArray().split(",").length;
+	                }
+	            }
+
+	            // Lấy sức chứa tối đa của phòng chiếu phim đó (Ví dụ phòng có 50 hay 100 ghế)
+	            int roomCapacity = showtime.getRoom().getTotalSeats(); 
+
+	            // Nếu số ghế đã đặt vượt quá hoặc bằng sức chứa -> Đánh dấu Sold Out là true
+	            if (totalBookedSeats >= roomCapacity) {
+	                showtime.setSoldOut(true);
+	            }
+	        }
+
+	        return activeShowtimes;
+	    }
+	    
+	    
+	}

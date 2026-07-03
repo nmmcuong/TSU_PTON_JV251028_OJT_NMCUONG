@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: html_head('Smart Cinema - Chọn Suất Chiếu')}"></head>
+
+<body class="bg-stone-900 text-stone-100 min-h-screen font-sans pt-20 flex flex-col">
+
+    <div th:replace="~{fragments :: common_header}"></div>
+
+    <main class="max-w-6xl mx-auto px-4 py-10 flex-grow w-full space-y-8">
+        
+        <div class="bg-stone-800 p-6 rounded-2xl border border-stone-700">
+            <h1 class="text-3xl font-black text-amber-400">TÊN BỘ PHIM ĐANG CHỌN</h1>
+            <p class="text-stone-400 text-sm mt-2">Thời lượng: 120 phút | Thể loại: Hành động</p>
+        </div>
+
+        <div class="space-y-4">
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                📅 Vui lòng chọn suất chiếu:
+            </h3>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div th:each="showtime : ${showtimes}" class="relative">
+                    
+                    <div th:if="${showtime.isSoldOut}" class="relative border-2 border-stone-700 bg-stone-800 opacity-60 p-4 rounded-2xl flex flex-col items-center justify-center transition">
+                        <span class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase shadow-md">
+                            Hết vé
+                        </span>
+                        <p class="text-stone-400 font-bold text-lg" th:text="${#temporals.format(showtime.startTime, 'HH:mm')}"></p>
+                        <p class="text-xs text-stone-500" th:text="${showtime.room.roomName}"></p>
+                        
+                        <a th:href="@{/showtime/{id}/seats(id=${showtime.id})}" class="mt-2 text-[11px] text-amber-500 hover:underline">
+                            Xem sơ đồ ghế ➔
+                        </a>
+                    </div>
+
+                    <a th:unless="${showtime.isSoldOut}" 
+                       th:href="@{/showtime/{id}/seats(id=${showtime.id})}"
+                       class="border border-stone-700 bg-stone-800/40 hover:border-amber-500 hover:bg-stone-800 p-4 rounded-2xl flex flex-col items-center justify-center shadow-sm transition group">
+                        
+                        <p class="text-white font-extrabold text-xl group-hover:text-amber-400 transition" 
+                           th:text="${#temporals.format(showtime.startTime, 'HH:mm')}"></p>
+                        <p class="text-xs text-stone-400" th:text="${showtime.room.roomName}"></p>
+                        <span class="mt-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/20">
+                            Còn vé
+                        </span>
+                    </a>
+
+                </div>
+            </div>
+            </div>
+    </main>
+
+    <div th:replace="~{fragments :: common_footer}"></div>
+
+</body>
+</html>

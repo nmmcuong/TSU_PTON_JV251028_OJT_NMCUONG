@@ -7,4 +7,6 @@ public interface ShowtimeService {
     List<Showtime> getAllShowtimes();
     void saveShowtime(Showtime showtime) throws Exception;
     void deleteShowtime(Long id);
+    
+    
 }

@@ -2,19 +2,27 @@ package com.example.demo.controller;
 
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.ShowtimeService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
+import java.awt.List;
 import java.util.Optional;
 
 @Controller
 public class HomeController {
 
     private final UserRepository userRepository;
+    
+    @Autowired
+    private ShowtimeService showtimeService;
 
     public HomeController(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -46,4 +54,15 @@ public class HomeController {
     public String viewAccessDeniedPage() {
         return "403";
     }
+    
+//    @GetMapping("/movie/{id}/showtimes")
+//    public String getMovieShowtimes(@PathVariable("id") Long movieId, Model model) {
+//        // Gọi hàm Service đã được xử lý lọc giờ và check Sold Out ở trên
+//        List<Showtime> showtimes = showtimeService.get;
+//        
+//        model.addAttribute("showtimes", showtimes);
+//        return "showtime-selection";
+//    }
+    
+    
 }

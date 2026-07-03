@@ -30,6 +30,18 @@ public class Showtime {
     @Column(name = "price", nullable = false)
     private Double price; 
     
+    @Transient 
+    private boolean isSoldOut;
+    
+ // --- Getter và Setter cho các thuộc tính ---
+    public boolean isSoldOut() {
+        return isSoldOut;
+    }
+
+    public void setSoldOut(boolean soldOut) {
+        isSoldOut = soldOut;
+    }
+    
     public Showtime() {}
 
     // --- GETTER & SETTER 
@@ -48,4 +60,5 @@ public class Showtime {
     public Double getPrice() { return price; }
     public void setPrice(Double price) { this.price = price; }
 
+    
 }

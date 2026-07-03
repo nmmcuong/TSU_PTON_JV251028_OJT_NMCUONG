@@ -20,4 +20,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 	    List<Booking> findBookingHistoryByUserId(@Param("userId") Long userId);
     // Lấy các đơn đặt vé theo lịch chiếu và trạng thái khác FAILED/CANCELLED nếu có
     List<Booking> findByShowtimeShowtimeIdAndBookingStatusNot(Long showtimeId, BookingStatus status);
+    List<Booking> findByShowtimeIdAndBookingStatus(Long showtimeId, String status);
 }
