@@ -12,11 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Optional;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -29,6 +31,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    
 
     @Override
     @Transactional(rollbackFor = Exception.class) // Đảm bảo tính toàn vẹn: có lỗi là hủy toàn bộ
@@ -85,6 +89,30 @@ public class BookingServiceImpl implements BookingService {
     public List<Booking> getBookingHistory(Long userId) {
         // Gọi Repository để lấy danh sách đã được JOIN sẵn phim và suất chiếu
         return bookingRepository.findBookingHistoryByUserId(userId);
+    }
+    
+    public String cancelTicket(Long bookingId, String username) {
+        // 1. Tìm kiếm vé xem có tồn tại và thuộc về user này không
+    	Booking booking = bookingRepository.findByBookingIdAndUserUsername(bookingId, username)
+    			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng!"));
+
+        // 2. Lấy thời gian chiếu của phim và thời gian hiện tại
+        LocalDateTime showtimeStart = booking.getShowtime().getStartTime();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 3. Tính khoảng cách thời gian (Theo sơ đồ nhánh alt)
+        long hoursLeft = Duration.between(now, showtimeStart).toHours();
+
+        if (hoursLeft < 24) {
+            // [Cách giờ chiếu chưa đến 24 tiếng] -> Trả về thông báo lỗi
+            return "QUÁ_MUỘN";
+        }
+
+        // [Còn nhiều hơn 24 tiếng] -> Tiến hành hủy vé
+        booking.setBookingStatus("CANCELED"); // Hoặc dùng Enum BookingStatus.CANCELED nếu có
+        bookingRepository.save(booking);
+        
+        return "THÀNH_CÔNG";
     }
     
 }

@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder; // Thêm
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -94,4 +95,30 @@ public class BookingController {
         
         return "booking-history"; 
     }
+    
+    @PostMapping("/booking/cancel/{id}")
+    public String handleCancelTicket(@PathVariable("id") Long bookingId, 
+                                     Authentication auth, 
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            // Gọi xuống dịch vụ xử lý hủy vé
+            String result = bookingService.cancelTicket(bookingId, auth.getName());
+
+            if ("QUÁ_MUỘN".equals(result)) {
+                // Nhánh alt 1: Thất bại vì sát giờ chiếu
+                redirectAttributes.addFlashAttribute("errorMessage", "Hủy vé thất bại! Bạn chỉ có thể hủy vé trước giờ chiếu 24 tiếng.");
+            } else {
+                // Nhánh alt 2: Thành công
+                redirectAttributes.addFlashAttribute("successMessage", "Hủy vé thành công! Ghế của bạn đã được giải phóng.");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
+        }
+
+        // Sau khi xử lý xong thì load lại trang lịch sử đặt vé
+        return "redirect:/booking/history";
+    }
+    
+    
+    
 }
