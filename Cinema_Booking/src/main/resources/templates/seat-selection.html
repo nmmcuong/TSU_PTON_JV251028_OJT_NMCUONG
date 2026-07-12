@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: html_head('Chọn Ghế - Smart Cinema')}"></head>
+
+<body class="bg-stone-950 text-stone-100 min-h-screen font-sans flex flex-col">
+<div th:replace="~{fragments :: common_header}"></div>
+
+<!-- Padding top để tránh bị header fixed che -->
+<main class="pt-24 pb-16 flex-grow">
+  <div class="max-w-6xl mx-auto px-4">
+
+    <!-- ===== THÔNG TIN SUẤT CHIẾU ===== -->
+    <div class="mb-8 bg-stone-900/80 border border-stone-800 rounded-2xl p-6
+                flex flex-col md:flex-row gap-6 items-start shadow-xl">
+
+      <!-- Poster phim -->
+      <div class="flex-shrink-0">
+        <img th:if="${showtime.movie.posterUrl != null and !showtime.movie.posterUrl.isEmpty()}"
+             th:src="${showtime.movie.posterUrl}"
+             alt="Poster phim"
+             class="w-28 h-40 object-cover rounded-xl shadow-lg border border-stone-700">
+        <div th:unless="${showtime.movie.posterUrl != null and !showtime.movie.posterUrl.isEmpty()}"
+             class="w-28 h-40 bg-stone-800 rounded-xl flex items-center justify-center text-4xl">🎬</div>
+      </div>
+
+      <!-- Thông tin phim + suất -->
+      <div class="flex-1 space-y-3">
+        <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight"
+            th:text="${showtime.movie.title}">Tên Phim</h1>
+
+        <div class="flex flex-wrap gap-4 text-sm">
+          <span class="flex items-center gap-1.5 text-amber-400 font-semibold">
+            🏛️ <span th:text="${showtime.room.roomName}">Phòng 1</span>
+          </span>
+          <span class="flex items-center gap-1.5 text-stone-300">
+            🕐 <span th:text="${#temporals.format(showtime.startTime, 'EEEE, dd/MM/yyyy HH:mm')}">Thứ Bảy, 11/07/2026 20:00</span>
+          </span>
+          <span class="flex items-center gap-1.5 text-stone-300">
+            ⏱️ <span th:text="${showtime.movie.duration + ' phút'}">120 phút</span>
+          </span>
+        </div>
+
+        <!-- Giá vé + Badge loại ghế -->
+        <div class="flex flex-wrap items-center gap-3 pt-2">
+          <div class="text-xl font-black text-green-400">
+            <span th:text="${#numbers.formatDecimal(showtime.price, 0, 'COMMA', 0, 'POINT')}">90,000</span>
+            <span class="text-sm font-normal text-stone-400"> đ / ghế</span>
+          </div>
+          <!-- Legend các loại ghế -->
+          <div class="flex gap-2 text-xs flex-wrap">
+            <span class="px-2.5 py-1 rounded bg-stone-700 text-stone-300 border border-stone-600">⬜ Thường</span>
+            <span class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">⭐ VIP (+50%)</span>
+            <span class="px-2.5 py-1 rounded bg-pink-500/20 text-pink-400 border border-pink-500/40">💑 Couple (+80%)</span>
+            <span class="px-2.5 py-1 rounded bg-red-900/60 text-red-400 border border-red-700">🔴 Đã bán</span>
+            <span class="px-2.5 py-1 rounded bg-green-600/30 text-green-400 border border-green-500/50">✅ Đang chọn</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== THÔNG BÁO ===== -->
+    <div th:if="${errorMessage}"
+         class="mb-4 bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm font-medium"
+         th:text="${errorMessage}"></div>
+
+    <!-- ===== CẢNH BÁO HẾT VÉ ===== -->
+    <div th:if="${isSoldOut}"
+         class="mb-6 bg-red-900/30 border border-red-700 text-red-300 p-5 rounded-xl text-center font-bold text-lg">
+      🎫 Suất chiếu này đã BÁN HẾT VÉ
+    </div>
+
+    <!-- ===== SƠ ĐỒ GHẾ ===== -->
+    <div th:unless="${isSoldOut}">
+      <form id="bookingForm" th:action="@{/booking/checkout}" method="POST">
+        <input type="hidden" name="showtimeId" th:value="${showtime.showtimeId}">
+        <!-- CSRF Token cho Spring Security -->
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+        <!-- Màn hình chiếu -->
+        <div class="mb-8 text-center">
+          <div class="inline-block w-full max-w-xl mx-auto">
+            <div class="h-2 bg-gradient-to-r from-transparent via-amber-400/60 to-transparent rounded-full mb-1"></div>
+            <p class="text-xs text-stone-500 tracking-widest uppercase mt-1">MÀN HÌNH CHIẾU</p>
+          </div>
+        </div>
+
+        <!-- Grid ghế — Nhóm theo hàng -->
+        <div class="space-y-3 mb-8" id="seatGrid">
+
+          <div th:each="entry : ${seatMap}" class="flex items-center gap-2 md:gap-3">
+
+            <!-- Nhãn hàng (A, B, C...) -->
+            <span class="w-6 text-center text-xs font-bold text-stone-500 flex-shrink-0"
+                  th:text="${entry.key}">A</span>
+
+            <!-- Danh sách ghế trong hàng -->
+            <div class="flex flex-wrap gap-1.5 md:gap-2 flex-1 justify-center">
+
+              <th:block th:each="seat : ${entry.value}">
+
+                <!-- Ghế ĐÃ BÁN → Disabled, không click được -->
+                <div th:if="${bookedSeats.contains(seat.seatCode)}"
+                     class="seat-btn w-9 h-9 md:w-10 md:h-10 rounded-lg text-xs font-bold
+                            bg-red-900/50 text-red-600 border border-red-800
+                            cursor-not-allowed flex items-center justify-center
+                            select-none"
+                     th:title="'Ghế ' + ${seat.seatCode} + ' - Đã bán'"
+                     th:text="${seat.seatCode}">A1</div>
+
+                <!-- Ghế VIP → Có thể chọn -->
+                <div th:if="${!bookedSeats.contains(seat.seatCode) and seat.seatType == 'VIP'}"
+                     class="seat-btn seat-available w-9 h-9 md:w-10 md:h-10 rounded-lg text-xs font-bold
+                            bg-amber-500/10 text-amber-400 border border-amber-500/40
+                            cursor-pointer hover:bg-amber-500 hover:text-black hover:border-amber-400
+                            flex items-center justify-center select-none transition-all duration-150
+                            active:scale-95"
+                     th:data-seat="${seat.seatCode}"
+                     th:data-type="${seat.seatType}"
+                     th:data-price="${showtime.price * 1.5}"
+                     th:title="'Ghế VIP ' + ${seat.seatCode}"
+                     th:text="${seat.seatCode}">G1</div>
+
+                <!-- Ghế COUPLE → Có thể chọn -->
+                <div th:if="${!bookedSeats.contains(seat.seatCode) and seat.seatType == 'COUPLE'}"
+                     class="seat-btn seat-available w-9 h-9 md:w-10 md:h-10 rounded-lg text-xs font-bold
+                            bg-pink-500/10 text-pink-400 border border-pink-500/40
+                            cursor-pointer hover:bg-pink-500 hover:text-white hover:border-pink-400
+                            flex items-center justify-center select-none transition-all duration-150
+                            active:scale-95"
+                     th:data-seat="${seat.seatCode}"
+                     th:data-type="${seat.seatType}"
+                     th:data-price="${showtime.price * 1.8}"
+                     th:title="'Ghế Couple ' + ${seat.seatCode}"
+                     th:text="${seat.seatCode}">H1</div>
+
+                <!-- Ghế NORMAL → Có thể chọn -->
+                <div th:if="${!bookedSeats.contains(seat.seatCode) and (seat.seatType == 'NORMAL' or seat.seatType == null)}"
+                     class="seat-btn seat-available w-9 h-9 md:w-10 md:h-10 rounded-lg text-xs font-bold
+                            bg-stone-700/80 text-stone-300 border border-stone-600
+                            cursor-pointer hover:bg-stone-500 hover:text-white hover:border-stone-400
+                            flex items-center justify-center select-none transition-all duration-150
+                            active:scale-95"
+                     th:data-seat="${seat.seatCode}"
+                     th:data-type="${seat.seatType}"
+                     th:data-price="${showtime.price}"
+                     th:title="'Ghế thường ' + ${seat.seatCode}"
+                     th:text="${seat.seatCode}">A1</div>
+
+              </th:block>
+            </div>
+
+            <!-- Nhãn hàng bên phải -->
+            <span class="w-6 text-center text-xs font-bold text-stone-500 flex-shrink-0"
+                  th:text="${entry.key}">A</span>
+          </div>
+        </div>
+
+        <!-- ===== THANH TỔNG KẾT + NÚT THANH TOÁN ===== -->
+        <div class="sticky bottom-4 bg-stone-900/95 backdrop-blur border border-stone-700
+                    rounded-2xl p-5 shadow-2xl mt-6" id="checkoutBar">
+
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+
+            <!-- Ghế đang chọn -->
+            <div class="flex-1">
+              <p class="text-xs text-stone-500 mb-1 font-medium uppercase tracking-wider">Ghế đã chọn</p>
+              <div id="selectedSeatTags" class="flex flex-wrap gap-1.5 min-h-[28px]">
+                <span class="text-stone-600 text-xs italic" id="noSeatMsg">Chưa chọn ghế nào</span>
+              </div>
+            </div>
+
+            <!-- Phương thức thanh toán -->
+            <div class="flex-shrink-0">
+              <p class="text-xs text-stone-500 mb-1 font-medium uppercase tracking-wider">Thanh toán</p>
+              <select name="paymentMethod" id="paymentMethod"
+                      class="bg-stone-800 border border-stone-600 text-stone-300 text-sm rounded-lg
+                             px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <option value="CASH">💵 Tiền mặt tại quầy</option>
+                <option value="BANK_TRANSFER">🏦 Chuyển khoản</option>
+                <option value="MOMO">📱 MoMo</option>
+              </select>
+            </div>
+
+            <!-- Tổng tiền + nút xác nhận -->
+            <div class="text-right flex-shrink-0">
+              <p class="text-xs text-stone-500 mb-0.5">Tổng cộng</p>
+              <p class="text-2xl font-black text-green-400 mb-2">
+                <span id="totalPrice">0</span> đ
+              </p>
+              <button type="submit" id="submitBtn" disabled
+                      class="bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-black
+                             px-8 py-3 rounded-xl shadow-lg transition-all duration-200
+                             disabled:opacity-40 disabled:cursor-not-allowed
+                             hover:enabled:from-amber-400 hover:enabled:to-yellow-300
+                             hover:enabled:shadow-amber-500/30 hover:enabled:shadow-xl
+                             active:enabled:scale-95 text-sm tracking-wide uppercase">
+                🎟️ Xác nhận đặt vé
+              </button>
+            </div>
+          </div>
+
+          <!-- Hidden inputs cho ghế đã chọn (append bằng JS) -->
+          <div id="hiddenSeatInputs"></div>
+        </div>
+
+      </form>
+    </div><!-- end th:unless soldOut -->
+
+  </div>
+</main>
+
+<div th:replace="~{fragments :: common_footer}"></div>
+
+<!-- ===== JAVASCRIPT XỬ LÝ CHỌN GHẾ ===== -->
+<script>
+  (function () {
+    'use strict';
+
+    // Giá vé cơ bản từ server (dùng để tính tổng)
+    const basePrice = /*[[${showtime.price}]]*/ 90000;
+
+    // State: Map<seatCode, price>
+    const selectedSeats = new Map();
+
+    // DOM elements
+    const submitBtn = document.getElementById('submitBtn');
+    const totalPriceEl = document.getElementById('totalPrice');
+    const selectedTagsEl = document.getElementById('selectedSeatTags');
+    const noSeatMsgEl = document.getElementById('noSeatMsg');
+    const hiddenInputsEl = document.getElementById('hiddenSeatInputs');
+
+    /**
+     * Định dạng số thành dạng 90,000 đ
+     */
+    function formatMoney(amount) {
+      return new Intl.NumberFormat('vi-VN').format(Math.round(amount));
+    }
+
+    /**
+     * Cập nhật giao diện tổng kết sau mỗi lần chọn/bỏ chọn ghế.
+     */
+    function updateSummary() {
+      // Tính tổng tiền
+      let total = 0;
+      selectedSeats.forEach(price => total += price);
+
+      // Cập nhật hiển thị tổng tiền
+      totalPriceEl.textContent = formatMoney(total);
+
+      // Cập nhật tags ghế đã chọn
+      selectedTagsEl.innerHTML = '';
+      hiddenInputsEl.innerHTML = '';
+
+      if (selectedSeats.size === 0) {
+        selectedTagsEl.appendChild(noSeatMsgEl);
+        submitBtn.disabled = true;
+        return;
+      }
+
+      // Tạo tag và hidden input cho mỗi ghế
+      selectedSeats.forEach((price, code) => {
+        // Tag hiển thị
+        const tag = document.createElement('span');
+        tag.className = 'bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold px-2 py-1 rounded';
+        tag.textContent = code;
+        selectedTagsEl.appendChild(tag);
+
+        // Hidden input để submit form
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'seats';
+        input.value = code;
+        hiddenInputsEl.appendChild(input);
+      });
+
+      // Bật nút submit khi đã chọn ít nhất 1 ghế
+      submitBtn.disabled = false;
+    }
+
+    /**
+     * Gắn sự kiện click cho tất cả ghế available.
+     */
+    document.querySelectorAll('.seat-available').forEach(function (seatEl) {
+      seatEl.addEventListener('click', function () {
+        const code = this.dataset.seat;
+        const type = this.dataset.type;
+        const price = parseFloat(this.dataset.price) || basePrice;
+
+        if (selectedSeats.has(code)) {
+          // Bỏ chọn ghế
+          selectedSeats.delete(code);
+          this.classList.remove('!bg-green-600', '!text-white', '!border-green-500', 'ring-2', 'ring-green-400');
+        } else {
+          // Giới hạn tối đa 8 ghế / lần đặt
+          if (selectedSeats.size >= 8) {
+            alert('Bạn chỉ có thể chọn tối đa 8 ghế trong một lần đặt!');
+            return;
+          }
+          // Chọn ghế
+          selectedSeats.set(code, price);
+          this.classList.add('!bg-green-600', '!text-white', '!border-green-500', 'ring-2', 'ring-green-400');
+        }
+
+        updateSummary();
+      });
+    });
+
+    // Xác nhận trước khi submit
+    document.getElementById('bookingForm').addEventListener('submit', function (e) {
+      if (selectedSeats.size === 0) {
+        e.preventDefault();
+        alert('Vui lòng chọn ít nhất 1 ghế trước khi tiếp tục!');
+        return;
+      }
+
+      const seatList = Array.from(selectedSeats.keys()).join(', ');
+      const total = Array.from(selectedSeats.values()).reduce((a, b) => a + b, 0);
+      const confirmed = confirm(
+        '🎟️ Xác nhận đặt vé?\n\n' +
+        'Ghế: ' + seatList + '\n' +
+        'Tổng tiền: ' + formatMoney(total) + ' đ\n\n' +
+        'Nhấn OK để thanh toán.'
+      );
+
+      if (!confirmed) {
+        e.preventDefault();
+      }
+    });
+
+    // Khởi tạo UI
+    updateSummary();
+
+  })();
+</script>
+
+</body>
+</html>

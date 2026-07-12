@@ -2,15 +2,12 @@ package com.example.demo.controller;
 
 import com.example.demo.model.Booking;
 import com.example.demo.model.User;
-import com.example.demo.repository.UserRepository; 
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.BookingService;
 
-import jakarta.servlet.http.HttpSession;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AnonymousAuthenticationToken; // Thêm import này
-import org.springframework.security.core.Authentication; 
-import org.springframework.security.core.context.SecurityContextHolder; // Thêm import này
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,102 +20,166 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Controller xử lý luồng đặt vé: thanh toán, xem lịch sử, hủy vé, hóa đơn.
+ *
+ * Prefix URL: /booking
+ */
 @Controller
 @RequestMapping("/booking")
 public class BookingController {
 
-    @Autowired
-    private BookingService bookingService;
+    private final BookingService bookingService;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-    
+    public BookingController(BookingService bookingService, UserRepository userRepository) {
+        this.bookingService = bookingService;
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Xử lý form thanh toán vé (POST từ trang chọn ghế).
+     * CORE-06: Gọi Service có @Transactional + Pessimistic Locking.
+     */
     @PostMapping("/checkout")
     public String processBooking(@RequestParam("showtimeId") Long showtimeId,
                                  @RequestParam("seats") List<String> selectedSeats,
                                  @RequestParam("paymentMethod") String paymentMethod,
-                                 HttpSession session,
-                                 RedirectAttributes redirectAttributes,
-                                 Model model) {
-        
-        // Kiểm tra trạng thái phiên đăng nhập của người dùng
-        User currentUser = (User) session.getAttribute("currentUser");
-        if (currentUser == null) {
-            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để thực hiện đặt vé!");
+                                 Authentication auth,
+                                 RedirectAttributes redirectAttributes) {
+
+        // 1. Lấy thông tin user đang đăng nhập qua Spring Security
+        String username = auth.getName();
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty()) {
             return "redirect:/login";
         }
+        User currentUser = userOpt.get();
 
         try {
-            // Thực thi nghiệp vụ xử lý lõi đặt vé
+            // 2. Gọi service xử lý đặt vé — @Transactional bên trong
             Booking successfulBooking = bookingService.createBooking(
-                    currentUser.getId(), 
-                    showtimeId, 
-                    selectedSeats, 
+                    currentUser.getId(),
+                    showtimeId,
+                    selectedSeats,
                     paymentMethod
             );
 
-            // Báo thành công và hiện hóa đơn sang trang xác nhận đơn hàng
-            redirectAttributes.addFlashAttribute("successMessage", "Đặt vé thành công!");
+            // 3. Thành công → Redirect đến trang hóa đơn
+            redirectAttributes.addFlashAttribute("successMessage", "🎉 Đặt vé thành công!");
             return "redirect:/booking/invoice/" + successfulBooking.getBookingId();
 
         } catch (RuntimeException e) {
-            // Bắt lỗi trùng ghế (Rollback thành công) -> Trả thông báo lỗi cụ thể về màn hình chọn ghế
+            // 4. Có ghế bị tranh chấp (đã Rollback) → Về lại trang chọn ghế với thông báo lỗi
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/showtime/" + showtimeId + "/seats"; 
+            return "redirect:/showtime/" + showtimeId + "/seats";
         }
     }
-    
+
+    /**
+     * Hiển thị trang hóa đơn xác nhận sau khi đặt vé thành công.
+     * CORE-07: JOIN đầy đủ thông tin phim + suất chiếu + ghế.
+     */
+    @GetMapping("/invoice/{id}")
+    public String viewInvoice(@PathVariable("id") Long bookingId,
+                               Authentication auth,
+                               Model model) {
+
+        // 1. Tìm booking theo ID
+        Optional<Booking> bookingOpt = bookingService.getBookingById(bookingId);
+        if (bookingOpt.isEmpty()) {
+            return "redirect:/booking/history";
+        }
+
+        Booking booking = bookingOpt.get();
+
+        // 2. Kiểm tra quyền: Chỉ chủ sở hữu booking hoặc Admin mới được xem
+        String currentUsername = auth.getName();
+        boolean isOwner = booking.getUser().getUsername().equals(currentUsername);
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!isOwner && !isAdmin) {
+            return "redirect:/403";
+        }
+
+        // 3. Phân tích danh sách ghế từ chuỗi "A1,A2,B3" → mảng
+        String[] seatList = {};
+        if (booking.getBookingSeatArray() != null && !booking.getBookingSeatArray().isEmpty()) {
+            seatList = booking.getBookingSeatArray().split(",");
+        }
+
+        model.addAttribute("booking", booking);
+        model.addAttribute("seatList", seatList);
+
+        return "booking-invoice";
+    }
+
+    /**
+     * Hiển thị lịch sử đặt vé của người dùng đang đăng nhập.
+     * CORE-07: JOIN đầy đủ bookings + showtimes + movies + ghế.
+     */
     @GetMapping("/history")
-    public String viewBookingHistory(Model model) {
-        
-        // 1. Lấy thông tin xác thực từ Spring Security
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
-        // Nếu chưa đăng nhập hoặc là khách ẩn danh -> Đá về trang login
+    public String viewBookingHistory(Model model, Authentication auth) {
+
+        // Nếu chưa đăng nhập → đá về login
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             return "redirect:/login";
         }
 
-        // 2. Lấy username hiện tại và truy vấn DB để bốc Object User ra
         Optional<User> userOpt = userRepository.findByUsername(auth.getName());
         if (userOpt.isEmpty()) {
             return "redirect:/login";
         }
         User currentUser = userOpt.get();
 
-        // 3. Gọi service lấy danh sách lịch sử theo đúng ID của User
+        // Gọi service JOIN đầy đủ thông tin
         List<Booking> historyList = bookingService.getBookingHistory(currentUser.getId());
 
-        // 4. Truyền dữ liệu ra View
         model.addAttribute("historyList", historyList);
-        model.addAttribute("currentUser", currentUser); // Truyền thêm để navbar hoặc giao diện dùng nếu cần
-        
-        return "booking-history"; 
+        model.addAttribute("currentUser", currentUser);
+
+        return "booking-history";
     }
-    
-    @PostMapping("/booking/cancel/{id}")
-    public String handleCancelTicket(@PathVariable("id") Long bookingId, 
-                                     Authentication auth, 
+
+    /**
+     * Xử lý yêu cầu hủy vé.
+     * CORE-09: Chỉ hủy được trước 24h so với giờ chiếu.
+     * Ghế được giải phóng ngay khi hủy (status → CANCELLED).
+     *
+     * FIX: Mapping đúng là /cancel/{id} (không phải /booking/cancel/{id})
+     * vì class đã có @RequestMapping("/booking")
+     */
+    @PostMapping("/cancel/{id}")
+    public String handleCancelTicket(@PathVariable("id") Long bookingId,
+                                     Authentication auth,
                                      RedirectAttributes redirectAttributes) {
         try {
-            // Gọi xuống dịch vụ xử lý hủy vé
             String result = bookingService.cancelTicket(bookingId, auth.getName());
 
             if ("QUÁ_MUỘN".equals(result)) {
-                // Nhánh alt 1: Thất bại vì sát giờ chiếu
-                redirectAttributes.addFlashAttribute("errorMessage", "Hủy vé thất bại! Bạn chỉ có thể hủy vé trước giờ chiếu 24 tiếng.");
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "❌ Hủy vé thất bại! Bạn chỉ có thể hủy trước giờ chiếu 24 tiếng.");
             } else {
-                // Nhánh alt 2: Thành công
-                redirectAttributes.addFlashAttribute("successMessage", "Hủy vé thành công! Ghế của bạn đã được giải phóng.");
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "✅ Hủy vé thành công! Ghế của bạn đã được giải phóng.");
             }
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Có lỗi xảy ra khi hủy vé: " + e.getMessage());
         }
 
-        // Sau khi xử lý xong thì load lại trang lịch sử đặt vé
         return "redirect:/booking/history";
     }
-    
-    
-    
+
+    /**
+     * Helper: Lấy User hiện tại từ Spring Security context.
+     * Không dùng session.getAttribute("currentUser") như code cũ.
+     */
+    private User getCurrentUser(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+            return null;
+        }
+        return userRepository.findByUsername(auth.getName()).orElse(null);
+    }
 }

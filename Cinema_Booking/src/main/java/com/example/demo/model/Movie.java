@@ -1,15 +1,18 @@
 package com.example.demo.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import com.example.demo.enums.MovieStatus;
 
 @Entity
 @Table(name = "movies")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Movie {
@@ -54,7 +57,9 @@ public class Movie {
         joinColumns = @JoinColumn(name = "movie_id"),
         inverseJoinColumns = @JoinColumn(name = "genre_id")
     )
-    private List<Genre> genres;
+    
+    
+    private List<Genre> genres = new ArrayList<>();; 
 
     @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
     @ToString.Exclude

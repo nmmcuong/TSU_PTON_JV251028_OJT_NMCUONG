@@ -7,8 +7,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "showtimes")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Showtime {
 
     @Id

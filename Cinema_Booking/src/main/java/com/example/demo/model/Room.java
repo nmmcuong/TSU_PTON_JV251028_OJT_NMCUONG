@@ -6,8 +6,6 @@ import java.util.List;
 @Entity
 @Table(name = "rooms")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Room {
 
     @Id
@@ -50,6 +48,18 @@ public class Room {
 
     public Integer getTotalSeats() { return totalSeats; }
     public void setTotalSeats(Integer totalSeats) { this.totalSeats = totalSeats; }
+
+    public Integer getSeatsX() { return seatsX; }
+    public void setSeatsX(Integer seatsX) { this.seatsX = seatsX; }
+
+    public Integer getSeatsY() { return seatsY; }
+    public void setSeatsY(Integer seatsY) { this.seatsY = seatsY; }
+
+    public String getVipSeats() { return vipSeats; }
+    public void setVipSeats(String vipSeats) { this.vipSeats = vipSeats; }
+
+    public String getCoupleSeats() { return coupleSeats; }
+    public void setCoupleSeats(String coupleSeats) { this.coupleSeats = coupleSeats; }
 
     public Boolean getStatus() { return status; }
     public void setStatus(Boolean status) { this.status = status; }

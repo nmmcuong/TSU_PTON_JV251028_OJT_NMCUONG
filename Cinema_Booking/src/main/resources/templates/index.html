@@ -32,6 +32,97 @@
             <button onclick="changeSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 text-white p-3 rounded-full hover:bg-amber-500 hover:text-black opacity-0 group-hover:opacity-100 transition duration-300 z-20">❮</button>
             <button onclick="changeSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 text-white p-3 rounded-full hover:bg-amber-500 hover:text-black opacity-0 group-hover:opacity-100 transition duration-300 z-20">❯</button>
         </div>
+
+        <!-- ===== DANH SÁCH PHIM ĐANG CHIẾU ===== -->
+        <div class="space-y-6">
+            <div class="flex justify-between items-center border-b border-stone-200 pb-4">
+                <h3 class="text-2xl font-black text-stone-900 tracking-wide">🎬 PHIM ĐANG CHIẾU</h3>
+                <a href="#" class="text-amber-600 hover:text-amber-700 text-sm font-bold">Xem tất cả ➔</a>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                <div th:each="movie : ${movies}" th:if="${movie.status.name() == 'NOW_SHOWING'}"
+                     class="bg-white rounded-2xl overflow-hidden shadow-md border border-stone-100 hover:shadow-xl transition duration-300 flex flex-col group">
+                    
+                    <!-- Poster -->
+                    <div class="relative overflow-hidden aspect-[2/3]">
+                        <img th:if="${movie.posterUrl != null and !movie.posterUrl.isEmpty()}" 
+                             th:src="${movie.posterUrl}" 
+                             alt="Poster" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div th:unless="${movie.posterUrl != null and !movie.posterUrl.isEmpty()}" 
+                             class="w-full h-full bg-stone-100 flex items-center justify-center text-5xl">🎬</div>
+                        
+                        <!-- Badge thời lượng -->
+                        <span class="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm">
+                            ⏱️ <span th:text="${movie.duration}">120</span> phút
+                        </span>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+                        <div class="space-y-1">
+                            <h4 class="font-extrabold text-stone-900 line-clamp-1 group-hover:text-amber-600 transition" 
+                                th:text="${movie.title}">Tên Phim</h4>
+                            <p class="text-xs text-stone-500">
+                                <span th:each="genre, iter : ${movie.genres}">
+                                    <span th:text="${genre.genreName}">Hành động</span><span th:if="${!iter.last}">, </span>
+                                </span>
+                            </p>
+                        </div>
+
+                        <a th:href="@{/movie/{id}/showtimes(id=${movie.movieId})}" 
+                           class="w-full text-center bg-stone-900 text-white font-bold text-xs py-2.5 rounded-xl hover:bg-amber-500 hover:text-black transition duration-200 shadow-sm uppercase tracking-wider">
+                            🎟️ Mua Vé
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== DANH SÁCH PHIM SẮP CHIẾU ===== -->
+        <div class="space-y-6">
+            <div class="flex justify-between items-center border-b border-stone-200 pb-4">
+                <h3 class="text-2xl font-black text-stone-900 tracking-wide">📅 PHIM SẮP CHIẾU</h3>
+                <a href="#" class="text-amber-600 hover:text-amber-700 text-sm font-bold">Xem tất cả ➔</a>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                <div th:each="movie : ${movies}" th:if="${movie.status.name() == 'COMING_SOON'}"
+                     class="bg-white rounded-2xl overflow-hidden shadow-md border border-stone-100 opacity-80 hover:opacity-100 transition duration-300 flex flex-col">
+                    
+                    <!-- Poster -->
+                    <div class="relative overflow-hidden aspect-[2/3]">
+                        <img th:if="${movie.posterUrl != null and !movie.posterUrl.isEmpty()}" 
+                             th:src="${movie.posterUrl}" 
+                             alt="Poster" 
+                             class="w-full h-full object-cover">
+                        <div th:unless="${movie.posterUrl != null and !movie.posterUrl.isEmpty()}" 
+                             class="w-full h-full bg-stone-100 flex items-center justify-center text-5xl">🎬</div>
+                        
+                        <span class="absolute top-3 left-3 bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                            Coming Soon
+                        </span>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+                        <div class="space-y-1">
+                            <h4 class="font-extrabold text-stone-900 line-clamp-1" th:text="${movie.title}">Tên Phim</h4>
+                            <p class="text-xs text-stone-500">
+                                <span th:each="genre, iter : ${movie.genres}">
+                                    <span th:text="${genre.genreName}">Hành động</span><span th:if="${!iter.last}">, </span>
+                                </span>
+                            </p>
+                        </div>
+
+                        <button disabled class="w-full text-center bg-stone-200 text-stone-500 font-bold text-xs py-2.5 rounded-xl cursor-not-allowed uppercase tracking-wider">
+                            Chưa mở bán
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <div th:replace="~{fragments :: common_footer}"></div>

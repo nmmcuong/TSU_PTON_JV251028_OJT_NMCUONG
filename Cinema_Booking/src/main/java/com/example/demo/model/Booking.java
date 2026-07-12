@@ -11,9 +11,24 @@ import com.example.demo.enums.BookingStatus;
 @Entity
 @Table(name = "bookings")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Booking {
+
+    public Booking() {
+    }
+
+    public Booking(Long bookingId, User user, LocalDateTime bookingDate, BigDecimal totalAmount, 
+                   String paymentMethod, BookingStatus bookingStatus, Showtime showtime, 
+                   String bookingSeatArray, List<Ticket> tickets) {
+        this.bookingId = bookingId;
+        this.user = user;
+        this.bookingDate = bookingDate;
+        this.totalAmount = totalAmount;
+        this.paymentMethod = paymentMethod;
+        this.bookingStatus = bookingStatus;
+        this.showtime = showtime;
+        this.bookingSeatArray = bookingSeatArray;
+        this.tickets = tickets;
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

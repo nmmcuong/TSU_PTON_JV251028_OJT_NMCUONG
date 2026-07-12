@@ -37,16 +37,17 @@
                         </td>
                         <td class="p-4 font-bold text-stone-900" th:text="${movie.title}"></td>
                         <td class="p-4">
-                            <span th:each="g : ${movie.genres}" class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded border mr-1" th:text="${g.name}"></span>
+                            <span th:each="g : ${movie.genres}" class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded border mr-1" th:text="${g.genreName}"></span>
                         </td>
                         <td class="p-4" th:text="${movie.duration + ' phút'}"></td>
                         <td class="p-4 text-center">
-                            <span th:if="${movie.enabled}" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">● Đang Chiếu</span>
-                            <span th:if="${!movie.enabled}" class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold">● Ngừng Chiếu</span>
+                            <span th:if="${movie.status.name() == 'NOW_SHOWING'}" class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">● Đang Chiếu</span>
+                            <span th:if="${movie.status.name() == 'COMING_SOON'}" class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">● Sắp Chiếu</span>
+                            <span th:if="${movie.status.name() == 'STOPPED'}" class="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold">● Ngừng Chiếu</span>
                         </td>
                         <td class="p-4 text-center space-x-2">
-                            <a th:href="@{/admin/movies/edit/{id}(id=${movie.id})}" class="text-amber-600 font-bold text-xs underline">Sửa</a>
-                            <a th:if="${movie.enabled}" th:href="@{/admin/movies/delete/{id}(id=${movie.id})}" onclick="return confirm('Ngừng chiếu phim này?')" class="text-red-500 font-bold text-xs underline ml-2">Xóa</a>
+                            <a th:href="@{/admin/movies/edit/{id}(id=${movie.movieId})}" class="text-amber-600 font-bold text-xs underline">Sửa</a>
+                            <a th:if="${movie.status.name() != 'STOPPED'}" th:href="@{/admin/movies/delete/{id}(id=${movie.movieId})}" onclick="return confirm('Ngừng chiếu phim này?')" class="text-red-500 font-bold text-xs underline ml-2">Ngừng Chiếu</a>
                         </td>
                     </tr>
                 </tbody>

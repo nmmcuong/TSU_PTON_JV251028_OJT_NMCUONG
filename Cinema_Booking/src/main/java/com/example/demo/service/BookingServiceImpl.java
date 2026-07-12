@@ -7,7 +7,6 @@ import com.example.demo.model.User;
 import com.example.demo.repository.BookingRepository;
 import com.example.demo.repository.ShowtimeRepository;
 import com.example.demo.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,52 +16,66 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Optional;
+import java.util.Set;
 
+
+/**
+ * Triển khai nghiệp vụ đặt vé, hủy vé và tra cứu lịch sử.
+ * CORE-06: Tất cả thao tác ghi đều được bọc trong @Transactional.
+ */
 @Service
 public class BookingServiceImpl implements BookingService {
 
-    @Autowired
-    private BookingRepository bookingRepository;
+    private final BookingRepository bookingRepository;
+    private final ShowtimeRepository showtimeRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
-    @Autowired
-    private ShowtimeRepository showtimeRepository;
+    public BookingServiceImpl(BookingRepository bookingRepository,
+                              ShowtimeRepository showtimeRepository,
+                              UserRepository userRepository,
+                              EmailService emailService) {
+        this.bookingRepository = bookingRepository;
+        this.showtimeRepository = showtimeRepository;
+        this.userRepository = userRepository;
+        this.emailService = emailService;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
-    
-    
-
+    /**
+     * CORE-06: Tạo đơn đặt vé với Pessimistic Locking + @Transactional.
+     * Nếu ghế đã bị người khác đặt → ném Exception → Rollback toàn bộ.
+     */
     @Override
-    @Transactional(rollbackFor = Exception.class) // Đảm bảo tính toàn vẹn: có lỗi là hủy toàn bộ
+    @Transactional(rollbackFor = Exception.class)
     public Booking createBooking(Long userId, Long showtimeId, List<String> selectedSeats, String paymentMethod) {
-        
-        // 1. Tìm và KHÓA dòng lịch chiếu lại để độc chiếm quyền xử lý luồng đặt ghế này
+
+        // 1. Khóa dòng showtime (Pessimistic Write Lock) để độc chiếm xử lý
         Showtime showtime = showtimeRepository.findByIdForBooking(showtimeId)
                 .orElseThrow(() -> new RuntimeException("Lịch chiếu không tồn tại hoặc đã bị hủy."));
 
-        // 2. Lấy danh sách tất cả các ghế đã được đặt thành công của lịch chiếu này
-        List<Booking> activeBookings = bookingRepository.findByShowtimeShowtimeIdAndBookingStatusNot(showtimeId, BookingStatus.FAILED);
-        
+        // 2. Lấy tất cả ghế đã được đặt THÀNH CÔNG của lịch chiếu này
+        List<Booking> activeBookings = bookingRepository
+                .findByShowtimeShowtimeIdAndBookingStatusNot(showtimeId, BookingStatus.FAILED);
+
         Set<String> bookedSeatsPool = new HashSet<>();
         for (Booking b : activeBookings) {
             if (b.getBookingSeatArray() != null && !b.getBookingSeatArray().isEmpty()) {
-                // Cắt chuỗi "A1,A2" thành mảng và đưa vào tập hợp để đối chiếu
+                // Tách chuỗi "A1,A2" thành mảng và đưa vào tập hợp đối chiếu
                 String[] seats = b.getBookingSeatArray().split(",");
                 bookedSeatsPool.addAll(Arrays.asList(seats));
             }
         }
 
-        // 3. Đối chiếu danh sách ghế người dùng đang chọn với kho ghế đã bán
+        // 3. Đối chiếu ghế người dùng muốn đặt với ghế đã bán
         for (String seat : selectedSeats) {
-            if (bookedSeatsPool.contains(seat)) {
-                // [Alt: Có ghế vừa bị người khác mua mất] -> Ném Exception để hệ thống hủy bỏ (Rollback) hoàn toàn
-                throw new RuntimeException("Ghế " + seat + " vừa có người khác nhanh tay đặt mất. Vui lòng chọn ghế khác!");
+            if (bookedSeatsPool.contains(seat.trim())) {
+                // Ghế đã bị chiếm → Ném exception → Rollback toàn bộ transaction
+                throw new RuntimeException("Ghế " + seat + " vừa có người khác nhanh tay đặt mất! Vui lòng chọn ghế khác.");
             }
         }
 
-        // 4. [Alt: Tất cả ghế đều trống] -> Tiến hành tạo đơn hàng và lưu dữ liệu đồng thời
+        // 4. Tất cả ghế còn trống → Tiến hành tạo booking
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Tài khoản người dùng không hợp lệ."));
 
@@ -70,49 +83,82 @@ public class BookingServiceImpl implements BookingService {
         booking.setUser(user);
         booking.setShowtime(showtime);
         booking.setBookingDate(LocalDateTime.now());
-        booking.setPaymentMethod(paymentMethod);
-        booking.setBookingStatus(BookingStatus.CONFIRMED); // Hoặc PENDING tùy luồng thanh toán
+        if ("CASH".equalsIgnoreCase(paymentMethod)) {
+            booking.setBookingStatus(BookingStatus.CONFIRMED);
+        } else {
+            booking.setBookingStatus(BookingStatus.PENDING);
+        }
 
-        // Gộp mảng danh sách ghế người dùng chọn thành chuỗi TEXT (Ví dụ: "A1,A2")
+        // Gộp danh sách ghế thành chuỗi TEXT (VD: "A1,A2,B3")
         String seatArrayString = String.join(",", selectedSeats);
         booking.setBookingSeatArray(seatArrayString);
 
-        // Tính tổng tiền dựa trên số lượng ghế nhân với đơn giá lịch chiếu
+        // Tính tổng tiền: số lượng ghế × đơn giá suất chiếu
         double totalPrice = showtime.getPrice() * selectedSeats.size();
         booking.setTotalAmount(BigDecimal.valueOf(totalPrice));
 
-        // Lưu xuống DB (Dữ liệu đơn và danh sách ghế được lưu đồng thời trên 1 dòng)
-        return bookingRepository.save(booking);
+        // Lưu xuống DB trong cùng một transaction
+        Booking savedBooking = bookingRepository.save(booking);
+
+        // Kích hoạt gửi email bất đồng bộ (chạy ngầm trên thread khác)
+        emailService.sendBookingConfirmationEmail(savedBooking);
+
+        return savedBooking;
     }
-    
+
+    /**
+     * CORE-07: Lấy lịch sử đặt vé với đầy đủ thông tin JOIN.
+     */
     @Override
     public List<Booking> getBookingHistory(Long userId) {
-        // Gọi Repository để lấy danh sách đã được JOIN sẵn phim và suất chiếu
         return bookingRepository.findBookingHistoryByUserId(userId);
     }
-    
-    public String cancelTicket(Long bookingId, String username) {
-        // 1. Tìm kiếm vé xem có tồn tại và thuộc về user này không
-    	Booking booking = bookingRepository.findByBookingIdAndUserUsername(bookingId, username)
-    			.orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng!"));
 
-        // 2. Lấy thời gian chiếu của phim và thời gian hiện tại
+    /**
+     * CORE-09: Hủy vé trước 24h so với giờ chiếu.
+     * @Transactional đảm bảo cập nhật status và giải phóng ghế là 1 đơn vị.
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String cancelTicket(Long bookingId, String username) {
+
+        // 1. Tìm đơn vé thuộc về đúng người dùng đang đăng nhập
+        Optional<Booking> bookingOptional = bookingRepository.findByBookingIdAndUserUsername(bookingId, username);
+
+        if (bookingOptional.isEmpty()) {
+            return "QUÁ_MUỘN"; // Không tìm thấy đơn → không cho hủy
+        }
+
+        Booking booking = bookingOptional.get();
+
+        // 2. Kiểm tra đơn có đang ở trạng thái CONFIRMED không
+        if (booking.getBookingStatus() != BookingStatus.CONFIRMED) {
+            return "QUÁ_MUỘN"; // Đơn đã bị hủy hoặc thất bại trước đó
+        }
+
+        // 3. Kiểm tra khoảng cách thời gian còn lại so với giờ chiếu
         LocalDateTime showtimeStart = booking.getShowtime().getStartTime();
         LocalDateTime now = LocalDateTime.now();
-
-        // 3. Tính khoảng cách thời gian (Theo sơ đồ nhánh alt)
         long hoursLeft = Duration.between(now, showtimeStart).toHours();
 
         if (hoursLeft < 24) {
-            // [Cách giờ chiếu chưa đến 24 tiếng] -> Trả về thông báo lỗi
+            // Cách giờ chiếu chưa đến 24 tiếng → Không cho hủy
             return "QUÁ_MUỘN";
         }
 
-        // [Còn nhiều hơn 24 tiếng] -> Tiến hành hủy vé
-        booking.setBookingStatus("CANCELED"); // Hoặc dùng Enum BookingStatus.CANCELED nếu có
+        // 4. Đủ điều kiện → Đổi trạng thái sang CANCELLED
+        // CORE-09: Ghế tự động "giải phóng" vì status CANCELLED không được tính là ghế đã bán
+        booking.setBookingStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
-        
+
         return "THÀNH_CÔNG";
     }
-    
+
+    /**
+     * Lấy chi tiết booking theo ID — dùng cho trang Invoice.
+     */
+    @Override
+    public Optional<Booking> getBookingById(Long bookingId) {
+        return bookingRepository.findById(bookingId);
+    }
 }

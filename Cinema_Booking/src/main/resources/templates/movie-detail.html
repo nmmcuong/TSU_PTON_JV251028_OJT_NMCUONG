@@ -8,9 +8,21 @@
 
     <main class="max-w-6xl mx-auto px-4 py-10 flex-grow w-full space-y-8">
         
-        <div class="bg-stone-800 p-6 rounded-2xl border border-stone-700">
-            <h1 class="text-3xl font-black text-amber-400">TÊN BỘ PHIM ĐANG CHỌN</h1>
-            <p class="text-stone-400 text-sm mt-2">Thời lượng: 120 phút | Thể loại: Hành động</p>
+        <div class="bg-stone-800 p-6 rounded-2xl border border-stone-700 flex flex-col md:flex-row gap-6">
+            <div th:if="${movie.posterUrl != null and !movie.posterUrl.isEmpty()}" class="flex-shrink-0">
+                <img th:src="${movie.posterUrl}" class="w-32 h-48 object-cover rounded-xl shadow-lg border border-stone-700"/>
+            </div>
+            <div class="space-y-2">
+                <h1 class="text-3xl font-black text-amber-400" th:text="${movie.title}">TÊN BỘ PHIM ĐANG CHỌN</h1>
+                <p class="text-stone-300 text-sm" th:text="${movie.description}"></p>
+                <p class="text-stone-400 text-sm pt-2">
+                    ⏱️ Thời lượng: <span th:text="${movie.duration}">120</span> phút | 
+                    🎭 Thể loại: 
+                    <span th:each="genre, iter : ${movie.genres}">
+                        <span th:text="${genre.genreName}">Hành động</span><span th:if="${!iter.last}">, </span>
+                    </span>
+                </p>
+            </div>
         </div>
 
         <div class="space-y-4">
@@ -28,13 +40,13 @@
                         <p class="text-stone-400 font-bold text-lg" th:text="${#temporals.format(showtime.startTime, 'HH:mm')}"></p>
                         <p class="text-xs text-stone-500" th:text="${showtime.room.roomName}"></p>
                         
-                        <a th:href="@{/showtime/{id}/seats(id=${showtime.id})}" class="mt-2 text-[11px] text-amber-500 hover:underline">
+                        <a th:href="@{/showtime/{id}/seats(id=${showtime.showtimeId})}" class="mt-2 text-[11px] text-amber-500 hover:underline">
                             Xem sơ đồ ghế ➔
                         </a>
                     </div>
 
                     <a th:unless="${showtime.isSoldOut}" 
-                       th:href="@{/showtime/{id}/seats(id=${showtime.id})}"
+                       th:href="@{/showtime/{id}/seats(id=${showtime.showtimeId})}"
                        class="border border-stone-700 bg-stone-800/40 hover:border-amber-500 hover:bg-stone-800 p-4 rounded-2xl flex flex-col items-center justify-center shadow-sm transition group">
                         
                         <p class="text-white font-extrabold text-xl group-hover:text-amber-400 transition" 
