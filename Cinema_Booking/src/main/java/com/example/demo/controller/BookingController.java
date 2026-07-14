@@ -8,6 +8,8 @@ import com.example.demo.service.BookingService;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,13 +50,11 @@ public class BookingController {
                                  Authentication auth,
                                  RedirectAttributes redirectAttributes) {
 
-        // 1. Lấy thông tin user đang đăng nhập qua Spring Security
-        String username = auth.getName();
-        Optional<User> userOpt = userRepository.findByUsername(username);
-        if (userOpt.isEmpty()) {
+        // 1. Lấy thông tin user đang đăng nhập (hỗ trợ cả OAuth2 và form login)
+        User currentUser = resolveCurrentUser(auth);
+        if (currentUser == null) {
             return "redirect:/login";
         }
-        User currentUser = userOpt.get();
 
         try {
             // 2. Gọi service xử lý đặt vé — @Transactional bên trong
@@ -94,8 +94,8 @@ public class BookingController {
         Booking booking = bookingOpt.get();
 
         // 2. Kiểm tra quyền: Chỉ chủ sở hữu booking hoặc Admin mới được xem
-        String currentUsername = auth.getName();
-        boolean isOwner = booking.getUser().getUsername().equals(currentUsername);
+        User viewer = resolveCurrentUser(auth);
+        boolean isOwner = viewer != null && booking.getUser().getId().equals(viewer.getId());
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
@@ -127,11 +127,10 @@ public class BookingController {
             return "redirect:/login";
         }
 
-        Optional<User> userOpt = userRepository.findByUsername(auth.getName());
-        if (userOpt.isEmpty()) {
+        User currentUser = resolveCurrentUser(auth);
+        if (currentUser == null) {
             return "redirect:/login";
         }
-        User currentUser = userOpt.get();
 
         // Gọi service JOIN đầy đủ thông tin
         List<Booking> historyList = bookingService.getBookingHistory(currentUser.getId());
@@ -173,13 +172,22 @@ public class BookingController {
     }
 
     /**
-     * Helper: Lấy User hiện tại từ Spring Security context.
-     * Không dùng session.getAttribute("currentUser") như code cũ.
+     * Helper: Lấy User hiện tại, hỗ trợ cả đăng nhập thông thường và OAuth2 (Google/Facebook).
      */
-    private User getCurrentUser(Authentication auth) {
+    private User resolveCurrentUser(Authentication auth) {
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             return null;
         }
+        // OAuth2 (Google / Facebook)
+        if (auth instanceof OAuth2AuthenticationToken) {
+            OAuth2User oAuth2User = (OAuth2User) auth.getPrincipal();
+            String email = (String) oAuth2User.getAttributes().get("email");
+            if (email != null) {
+                return userRepository.findByEmail(email).orElse(null);
+            }
+            return null;
+        }
+        // Form login thông thường
         return userRepository.findByUsername(auth.getName()).orElse(null);
     }
 }

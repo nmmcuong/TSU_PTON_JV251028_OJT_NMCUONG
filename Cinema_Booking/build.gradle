@@ -28,6 +28,7 @@ dependencies {
 	
 	// 3. Bảo mật & Kiểm tra dữ liệu đầu vào (Validation)
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	

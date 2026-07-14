@@ -12,21 +12,46 @@
         </div>
 
         <div class="relative h-[450px] rounded-3xl overflow-hidden shadow-xl group">
-            <div class="slide-carousel active h-full bg-gradient-to-r from-slate-900 to-amber-900 flex items-center px-12 text-white relative">
-                <div class="relative z-10 max-w-xl space-y-4">
-                    <span class="bg-amber-500 text-black text-[10px] font-black px-2.5 py-1 rounded uppercase tracking-widest">BOM TẤN MÙA HÈ</span>
-                    <h2 class="text-5xl font-black leading-none">AVENGERS: SECRET WARS</h2>
-                    <p class="text-stone-300 text-sm">Trận chiến thế kỷ khép lại kỷ nguyên đa vũ trụ. Trải nghiệm định dạng IMAX đỉnh cao duy nhất tại hệ thống rạp Smart Cinema.</p>
-                    <button class="bg-white text-black font-bold text-xs px-6 py-3 rounded-full hover:bg-amber-400 transition shadow-md">ĐẶT VÉ NGAY</button>
+            
+            <div th:if="${sliderMovies != null and !sliderMovies.isEmpty()}">
+                <div th:each="movie, iterStat : ${sliderMovies}" 
+                     th:classappend="${iterStat.first} ? 'active' : ''"
+                     class="slide-carousel absolute inset-0 bg-stone-900 transition-opacity duration-1000 opacity-0 flex items-center px-12 text-white overflow-hidden">
+                    
+                    <!-- Ảnh nền mờ -->
+                    <div class="absolute inset-0 z-0 opacity-40">
+                        <img th:if="${movie.posterUrl != null and !movie.posterUrl.isEmpty()}" 
+                             th:src="${movie.posterUrl}" 
+                             class="w-full h-full object-cover blur-sm transform scale-105" alt="Background">
+                        <div class="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/80 to-transparent"></div>
+                    </div>
+
+                    <!-- Nội dung phim -->
+                    <div class="relative z-10 max-w-xl space-y-4">
+                        <span class="bg-amber-500 text-black text-[10px] font-black px-2.5 py-1 rounded uppercase tracking-widest">
+                            SẮP CHIẾU
+                        </span>
+                        <h2 class="text-5xl font-black leading-none drop-shadow-lg" th:text="${movie.title}">TÊN PHIM</h2>
+                        <p class="text-stone-300 text-sm line-clamp-3" th:text="${movie.description}">Mô tả nội dung phim...</p>
+                        <p class="text-amber-400 text-sm font-bold mt-2">
+                            <i class="fa-solid fa-calendar-day mr-1"></i> Khởi chiếu: <span th:text="${#temporals.format(movie.releaseDate, 'dd/MM/yyyy')}"></span>
+                        </p>
+                        <a th:href="@{/movie/{id}/showtimes(id=${movie.movieId})}" class="inline-block mt-4 bg-white text-black font-bold text-xs px-6 py-3 rounded-full hover:bg-amber-400 transition shadow-md">
+                            XEM CHI TIẾT
+                        </a>
+                    </div>
+                    
+                    <!-- Ảnh Poster rõ ở bên phải (chỉ hiện trên màn hình to) -->
+                    <div class="relative z-10 hidden md:block ml-auto mr-10 shadow-2xl rounded-2xl overflow-hidden border-2 border-stone-700/50">
+                        <img th:if="${movie.posterUrl != null and !movie.posterUrl.isEmpty()}" 
+                             th:src="${movie.posterUrl}" 
+                             class="w-64 h-[350px] object-cover" alt="Poster">
+                    </div>
                 </div>
             </div>
-            <div class="slide-carousel h-full bg-gradient-to-r from-stone-950 to-red-950 flex items-center px-12 text-white relative">
-                <div class="relative z-10 max-w-xl space-y-4">
-                    <span class="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded uppercase tracking-widest">PHIM KINH DỊ HOT</span>
-                    <h2 class="text-5xl font-black leading-none">THE CONJURING 4</h2>
-                    <p class="text-stone-300 text-sm">Hồi kết kinh hoàng dựa trên tài liệu rùng rợn có thật của gia đình Warren. Không dành cho người yếu tim.</p>
-                    <button class="bg-red-600 text-white font-bold text-xs px-6 py-3 rounded-full hover:bg-red-700 transition shadow-md">ĐẶT VÉ NGAY</button>
-                </div>
+
+            <div th:if="${sliderMovies == null or sliderMovies.isEmpty()}" class="absolute inset-0 bg-stone-900 flex items-center justify-center text-stone-500">
+                <p>Đang cập nhật danh sách phim mới...</p>
             </div>
 
             <button onclick="changeSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 text-white p-3 rounded-full hover:bg-amber-500 hover:text-black opacity-0 group-hover:opacity-100 transition duration-300 z-20">❮</button>
@@ -131,14 +156,24 @@
         let currentSlideIndex = 0;
         const slides = document.querySelectorAll('.slide-carousel');
         
-        function showSlide(index) {
-            slides[currentSlideIndex].classList.remove('active');
-            currentSlideIndex = (index + slides.length) % slides.length;
-            slides[currentSlideIndex].classList.add('active');
+        if(slides.length > 0) {
+            function showSlide(index) {
+                slides[currentSlideIndex].classList.remove('active', 'opacity-100', 'z-10');
+                slides[currentSlideIndex].classList.add('opacity-0', 'z-0');
+                
+                currentSlideIndex = (index + slides.length) % slides.length;
+                
+                slides[currentSlideIndex].classList.remove('opacity-0', 'z-0');
+                slides[currentSlideIndex].classList.add('active', 'opacity-100', 'z-10');
+            }
+            function changeSlide(direction) { showSlide(currentSlideIndex + direction); }
+            // Khởi tạo slide đầu tiên
+            slides[0].classList.remove('opacity-0', 'z-0');
+            slides[0].classList.add('active', 'opacity-100', 'z-10');
+            
+            // Tự động chuyển slide sau mỗi 5 giây
+            setInterval(() => { changeSlide(1); }, 5000);
         }
-        function changeSlide(direction) { showSlide(currentSlideIndex + direction); }
-        // Tự động chuyển slide sau mỗi 5 giây
-        setInterval(() => { changeSlide(1); }, 5000);
     </script>
 </body>
 </html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: html_head('Kiểm tra vé - Nhân viên')}"></head>
+
+<body class="bg-stone-950 text-stone-100 min-h-screen font-sans pt-20 flex flex-col">
+<div th:replace="~{fragments :: common_header}"></div>
+
+<main class="max-w-5xl mx-auto px-4 py-10 flex-grow w-full space-y-8">
+
+    <!-- Header -->
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+            <i class="fa-solid fa-ticket-simple text-amber-400 text-xl"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-white">Kiểm tra &amp; Soát vé</h1>
+            <p class="text-stone-400 text-sm">Tìm kiếm vé theo mã booking, tên khách hàng hoặc email</p>
+        </div>
+    </div>
+
+    <!-- Flash messages -->
+    <div th:if="${successMessage}" class="bg-emerald-900/40 border border-emerald-500/30 text-emerald-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+        <i class="fa-solid fa-circle-check"></i> <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="bg-red-900/40 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+        <i class="fa-solid fa-circle-xmark"></i> <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Thanh tìm kiếm -->
+    <form th:action="@{/staff/tickets/check}" method="get"
+          class="flex gap-3">
+        <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-stone-400"></i>
+            <input type="text" name="keyword"
+                   th:value="${keyword}"
+                   placeholder="Nhập mã booking, tên khách hoặc email..."
+                   class="w-full bg-stone-800 border border-stone-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20
+                          text-stone-100 placeholder-stone-500 pl-11 pr-4 py-3 rounded-xl outline-none transition text-sm"/>
+        </div>
+        <button type="submit"
+                class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-3 rounded-xl transition text-sm whitespace-nowrap">
+            <i class="fa-solid fa-search mr-2"></i>Tìm kiếm
+        </button>
+    </form>
+
+    <!-- Kết quả tìm kiếm -->
+    <div th:if="${keyword != null and !keyword.isBlank()}">
+
+        <!-- Không có kết quả -->
+        <div th:if="${results.isEmpty()}" class="text-center py-16 text-stone-500 space-y-3">
+            <i class="fa-solid fa-ticket-simple text-5xl opacity-20"></i>
+            <p>Không tìm thấy vé nào với từ khóa <strong class="text-stone-300" th:text="'«' + ${keyword} + '»'"></strong></p>
+        </div>
+
+        <!-- Danh sách kết quả -->
+        <div th:unless="${results.isEmpty()}" class="space-y-3">
+            <p class="text-stone-400 text-sm">
+                Tìm thấy <strong class="text-white" th:text="${results.size()}"></strong> kết quả
+            </p>
+
+            <div class="overflow-hidden rounded-2xl border border-stone-800">
+                <table class="w-full text-sm">
+                    <thead class="bg-stone-800/80 text-stone-400 text-xs uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3 text-left">Mã vé</th>
+                            <th class="px-4 py-3 text-left">Khách hàng</th>
+                            <th class="px-4 py-3 text-left">Phim</th>
+                            <th class="px-4 py-3 text-left">Suất chiếu</th>
+                            <th class="px-4 py-3 text-left">Ghế</th>
+                            <th class="px-4 py-3 text-left">Trạng thái</th>
+                            <th class="px-4 py-3 text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-stone-800/60">
+                        <tr th:each="b : ${results}"
+                            class="bg-stone-900 hover:bg-stone-800/50 transition">
+                            <td class="px-4 py-3 font-mono font-bold text-amber-400"
+                                th:text="'#' + ${b.bookingId}"></td>
+                            <td class="px-4 py-3">
+                                <p class="font-semibold text-white" th:text="${b.user.fullName}"></p>
+                                <p class="text-xs text-stone-500" th:text="${b.user.email}"></p>
+                            </td>
+                            <td class="px-4 py-3 font-medium text-stone-200"
+                                th:text="${b.showtime.movie.title}"></td>
+                            <td class="px-4 py-3 text-stone-300 text-xs">
+                                <p th:text="${#temporals.format(b.showtime.startTime, 'dd/MM/yyyy')}"></p>
+                                <p class="font-bold text-base text-stone-100"
+                                   th:text="${#temporals.format(b.showtime.startTime, 'HH:mm')}"></p>
+                            </td>
+                            <td class="px-4 py-3 font-semibold text-stone-300 text-xs"
+                                th:text="${b.bookingSeatArray}"></td>
+                            <td class="px-4 py-3">
+                                <!-- CONFIRMED -->
+                                <span th:if="${b.bookingStatus.name() == 'CONFIRMED'}"
+                                      class="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 text-[11px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/20">
+                                    <i class="fa-solid fa-circle-check"></i> Đã xác nhận
+                                </span>
+                                <!-- USED -->
+                                <span th:if="${b.bookingStatus.name() == 'USED'}"
+                                      class="inline-flex items-center gap-1 bg-blue-500/10 text-blue-400 text-[11px] font-bold px-2.5 py-1 rounded-full border border-blue-500/20">
+                                    <i class="fa-solid fa-door-open"></i> Đã soát vé
+                                </span>
+                                <!-- CANCELLED -->
+                                <span th:if="${b.bookingStatus.name() == 'CANCELLED'}"
+                                      class="inline-flex items-center gap-1 bg-red-500/10 text-red-400 text-[11px] font-bold px-2.5 py-1 rounded-full border border-red-500/20">
+                                    <i class="fa-solid fa-ban"></i> Đã hủy
+                                </span>
+                                <!-- OTHER -->
+                                <span th:if="${b.bookingStatus.name() != 'CONFIRMED' and b.bookingStatus.name() != 'USED' and b.bookingStatus.name() != 'CANCELLED'}"
+                                      class="inline-flex items-center gap-1 bg-stone-700 text-stone-400 text-[11px] font-bold px-2.5 py-1 rounded-full">
+                                    <i class="fa-solid fa-clock"></i>
+                                    <span th:text="${b.bookingStatus.name()}"></span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <a th:href="@{/staff/tickets/{id}(id=${b.bookingId})}"
+                                   class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                                    <i class="fa-solid fa-eye"></i> Xem &amp; In
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trạng thái mặc định (chưa tìm kiếm) -->
+    <div th:if="${keyword == null or keyword.isBlank()}"
+         class="text-center py-20 text-stone-600 space-y-3">
+        <i class="fa-solid fa-magnifying-glass text-6xl opacity-20"></i>
+        <p class="text-lg">Nhập từ khóa để bắt đầu tìm kiếm vé</p>
+        <p class="text-sm text-stone-700">Hỗ trợ tìm theo: Mã booking · Tên khách hàng · Email</p>
+    </div>
+
+</main>
+
+<div th:replace="~{fragments :: common_footer}"></div>
+</body>
+</html>

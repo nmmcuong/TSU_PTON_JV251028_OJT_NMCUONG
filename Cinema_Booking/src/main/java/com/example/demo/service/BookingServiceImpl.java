@@ -30,16 +30,13 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final ShowtimeRepository showtimeRepository;
     private final UserRepository userRepository;
-    private final EmailService emailService;
 
     public BookingServiceImpl(BookingRepository bookingRepository,
                               ShowtimeRepository showtimeRepository,
-                              UserRepository userRepository,
-                              EmailService emailService) {
+                              UserRepository userRepository) {
         this.bookingRepository = bookingRepository;
         this.showtimeRepository = showtimeRepository;
         this.userRepository = userRepository;
-        this.emailService = emailService;
     }
 
     /**
@@ -94,14 +91,24 @@ public class BookingServiceImpl implements BookingService {
         booking.setBookingSeatArray(seatArrayString);
 
         // Tính tổng tiền: số lượng ghế × đơn giá suất chiếu
+        // (Tạm thời dùng giá cơ bản, có thể nâng cấp tính giá theo loại ghế sau)
         double totalPrice = showtime.getPrice() * selectedSeats.size();
         booking.setTotalAmount(BigDecimal.valueOf(totalPrice));
 
-        // Lưu xuống DB trong cùng một transaction
-        Booking savedBooking = bookingRepository.save(booking);
+        // Tạo danh sách Ticket
+        List<com.example.demo.model.Ticket> tickets = new java.util.ArrayList<>();
+        for (String seatCode : selectedSeats) {
+            com.example.demo.model.Ticket ticket = new com.example.demo.model.Ticket();
+            ticket.setBooking(booking);
+            ticket.setShowtime(showtime);
+            ticket.setSeatCode(seatCode.trim());
+            ticket.setPrice(BigDecimal.valueOf(showtime.getPrice()));
+            tickets.add(ticket);
+        }
+        booking.setTickets(tickets);
 
-        // Kích hoạt gửi email bất đồng bộ (chạy ngầm trên thread khác)
-        emailService.sendBookingConfirmationEmail(savedBooking);
+        // Lưu xuống DB trong cùng một transaction (sẽ tự động lưu cả Booking và danh sách Ticket nhờ CascadeType.ALL)
+        Booking savedBooking = bookingRepository.save(booking);
 
         return savedBooking;
     }

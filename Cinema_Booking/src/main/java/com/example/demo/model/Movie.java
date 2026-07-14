@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import com.example.demo.enums.MovieStatus;
 
@@ -59,7 +60,7 @@ public class Movie {
     )
     
     
-    private List<Genre> genres = new ArrayList<>();; 
+    private List<Genre> genres = new ArrayList<>();
 
     @OneToMany(mappedBy = "movie", fetch = FetchType.LAZY)
     @ToString.Exclude
@@ -75,7 +76,13 @@ public class Movie {
         }
     }
     
-    public void setGenres(List<Genre> genres) { this.genres = genres; }
+    public void setGenres(Collection<Genre> genres) {
+        if (genres == null) {
+            this.genres = new ArrayList<>();
+        } else {
+            this.genres = new ArrayList<>(genres); 
+        }
+    }
     public void setStatus(MovieStatus status) { this.status = status; }
     
     public Long getMovieId() {

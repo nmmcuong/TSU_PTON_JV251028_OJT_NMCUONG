@@ -10,6 +10,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * Xử lý các route xác thực: đăng nhập và đăng ký.
@@ -47,7 +48,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public String performRegistration(@Valid @ModelAttribute("userDto") UserRegisterDto registerDto,
-                                      BindingResult result, Model model) {
+                                      BindingResult result, Model model,RedirectAttributes redirectAttributes) {
         // 1. Kiểm tra các lỗi Validation (username quá ngắn, email sai định dạng...)
         if (result.hasErrors()) {
             // Spring tự đặt lại model, không cần add lại userDto
@@ -58,6 +59,7 @@ public class AuthController {
             // 2. Gọi Service tạo tài khoản mới (password tự động được hash BCrypt)
             userService.registerNewUser(registerDto);
 
+            redirectAttributes.addFlashAttribute("registerSuccess", "Đăng ký tài khoản thành công! Vui lòng đăng nhập.");
             // 3. Thành công → Chuyển về trang Login kèm thông báo
             return "redirect:/login?success=true";
 

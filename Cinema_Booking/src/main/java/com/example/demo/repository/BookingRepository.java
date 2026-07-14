@@ -47,4 +47,24 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
      * Dùng cho Background Job quét hủy đơn quá hạn thanh toán.
      */
     List<Booking> findByBookingStatusAndBookingDateBefore(BookingStatus status, LocalDateTime dateTime);
+
+    /** Tìm booking theo ID kèm JOIN đầy đủ — dùng cho trang kiểm tra vé của nhân viên */
+    @Query("SELECT b FROM Booking b " +
+           "JOIN FETCH b.showtime s " +
+           "JOIN FETCH s.movie m " +
+           "JOIN FETCH s.room r " +
+           "JOIN FETCH b.user u " +
+           "WHERE b.bookingId = :bookingId")
+    Optional<Booking> findByIdWithDetails(@Param("bookingId") Long bookingId);
+
+    /** Tìm kiếm vé theo tên khách hàng hoặc mã booking — dùng cho thanh search của nhân viên */
+    @Query("SELECT b FROM Booking b " +
+           "JOIN FETCH b.showtime s " +
+           "JOIN FETCH s.movie m " +
+           "JOIN FETCH b.user u " +
+           "WHERE CAST(b.bookingId AS string) LIKE %:keyword% " +
+           "   OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "   OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "ORDER BY b.bookingDate DESC")
+    List<Booking> searchByKeyword(@Param("keyword") String keyword);
 }

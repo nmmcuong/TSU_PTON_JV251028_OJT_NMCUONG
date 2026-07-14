@@ -44,6 +44,13 @@ public class User {
     @Column(name = "avatar_url", length = 255)
     private String avatarUrl;
 
+    // --- Thông tin đăng nhập mạng xã hội (OAuth2) ---
+    @Column(length = 50)
+    private String provider; // LOCAL, GOOGLE, FACEBOOK
+
+    @Column(name = "provider_id", length = 255)
+    private String providerId;
+
     // --- Các thông tin quản lý tài khoản ---
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -218,5 +225,21 @@ public class User {
 
     public void setBookings(List<Booking> bookings) {
         this.bookings = bookings;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }

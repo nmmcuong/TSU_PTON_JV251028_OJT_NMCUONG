@@ -5,9 +5,9 @@
 <body class="bg-stone-900 text-stone-100 min-h-screen font-sans pt-20 flex flex-col">
 
     <div th:replace="~{fragments :: common_header}"></div>
-
     <main class="max-w-6xl mx-auto px-4 py-10 flex-grow w-full space-y-8">
-        
+
+        <!-- Thông tin phim -->
         <div class="bg-stone-800 p-6 rounded-2xl border border-stone-700 flex flex-col md:flex-row gap-6">
             <div th:if="${movie.posterUrl != null and !movie.posterUrl.isEmpty()}" class="flex-shrink-0">
                 <img th:src="${movie.posterUrl}" class="w-32 h-48 object-cover rounded-xl shadow-lg border border-stone-700"/>
@@ -16,8 +16,8 @@
                 <h1 class="text-3xl font-black text-amber-400" th:text="${movie.title}">TÊN BỘ PHIM ĐANG CHỌN</h1>
                 <p class="text-stone-300 text-sm" th:text="${movie.description}"></p>
                 <p class="text-stone-400 text-sm pt-2">
-                    ⏱️ Thời lượng: <span th:text="${movie.duration}">120</span> phút | 
-                    🎭 Thể loại: 
+                    <i class="fa-solid fa-clock mr-1"></i> Thời lượng: <span th:text="${movie.duration}">120</span> phút |
+                    <i class="fa-solid fa-masks-theater ml-2 mr-1"></i> Thể loại:
                     <span th:each="genre, iter : ${movie.genres}">
                         <span th:text="${genre.genreName}">Hành động</span><span th:if="${!iter.last}">, </span>
                     </span>
@@ -25,44 +25,135 @@
             </div>
         </div>
 
-        <div class="space-y-4">
+        <!-- Chọn suất chiếu -->
+        <div class="space-y-5">
             <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                📅 Vui lòng chọn suất chiếu:
+                <i class="fa-solid fa-calendar-days text-amber-400"></i> Chọn ngày &amp; suất chiếu
             </h3>
-            
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div th:each="showtime : ${showtimes}" class="relative">
-                    
-                    <div th:if="${showtime.isSoldOut}" class="relative border-2 border-stone-700 bg-stone-800 opacity-60 p-4 rounded-2xl flex flex-col items-center justify-center transition">
-                        <span class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase shadow-md">
-                            Hết vé
-                        </span>
-                        <p class="text-stone-400 font-bold text-lg" th:text="${#temporals.format(showtime.startTime, 'HH:mm')}"></p>
-                        <p class="text-xs text-stone-500" th:text="${showtime.room.roomName}"></p>
-                        
-                        <a th:href="@{/showtime/{id}/seats(id=${showtime.showtimeId})}" class="mt-2 text-[11px] text-amber-500 hover:underline">
-                            Xem sơ đồ ghế ➔
-                        </a>
-                    </div>
 
-                    <a th:unless="${showtime.isSoldOut}" 
-                       th:href="@{/showtime/{id}/seats(id=${showtime.showtimeId})}"
-                       class="border border-stone-700 bg-stone-800/40 hover:border-amber-500 hover:bg-stone-800 p-4 rounded-2xl flex flex-col items-center justify-center shadow-sm transition group">
-                        
-                        <p class="text-white font-extrabold text-xl group-hover:text-amber-400 transition" 
-                           th:text="${#temporals.format(showtime.startTime, 'HH:mm')}"></p>
-                        <p class="text-xs text-stone-400" th:text="${showtime.room.roomName}"></p>
-                        <span class="mt-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/20">
-                            Còn vé
-                        </span>
-                    </a>
+            <!-- Trường hợp không có suất nào -->
+            <div th:if="${showtimesByDate.isEmpty()}" class="text-center py-16 text-stone-500">
+                <i class="fa-solid fa-film text-5xl mb-4 opacity-30"></i>
+                <p class="text-lg">Hiện chưa có suất chiếu nào cho phim này.</p>
+            </div>
 
+            <div th:unless="${showtimesByDate.isEmpty()}">
+
+                <!-- ===== THANH CHỌN NGÀY ===== -->
+                <div class="flex flex-wrap gap-2" id="dateTabs">
+                    <th:block th:each="entry, iterStat : ${showtimesByDate}">
+                        <button type="button"
+                                th:data-date="${#temporals.format(entry.key, 'yyyy-MM-dd')}"
+                                th:classappend="${iterStat.first} ? 'date-tab active' : 'date-tab'"
+                                class="date-tab flex flex-col items-center px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200 min-w-[72px]">
+                            <span class="text-[11px] font-normal uppercase tracking-wider day-label"
+                                  th:text="${#temporals.format(entry.key, 'EEE')}"></span>
+                            <span class="text-base font-black"
+                                  th:text="${#temporals.format(entry.key, 'dd')}"></span>
+                            <span class="text-[11px]"
+                                  th:text="${#temporals.format(entry.key, 'MM/yyyy')}"></span>
+                        </button>
+                    </th:block>
                 </div>
-            </div>
-            </div>
+
+                <!-- ===== CÁC NHÓM SUẤT CHIẾU THEO NGÀY ===== -->
+                <th:block th:each="entry, iterStat : ${showtimesByDate}">
+                    <div class="showtime-group"
+                         th:data-date="${#temporals.format(entry.key, 'yyyy-MM-dd')}"
+                         th:classappend="${iterStat.first} ? '' : ' hidden'">
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            <th:block th:each="showtime : ${entry.value}">
+
+                                <!-- Ghế hết -->
+                                <div th:if="${showtime.isSoldOut}"
+                                     class="relative border-2 border-stone-700 bg-stone-800 opacity-55 p-4 rounded-2xl flex flex-col items-center justify-center">
+                                    <span class="absolute -top-2.5 -right-2.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase shadow">
+                                        Hết vé
+                                    </span>
+                                    <p class="text-stone-400 font-black text-2xl leading-tight"
+                                       th:text="${#temporals.format(showtime.startTime, 'HH:mm')}"></p>
+                                    <p class="text-[11px] text-stone-500 mt-1"
+                                       th:text="${showtime.room.roomName}"></p>
+                                    <a th:href="@{/showtime/{id}/seats(id=${showtime.showtimeId})}"
+                                       class="mt-2.5 text-[11px] text-amber-500/60 hover:text-amber-400 hover:underline transition">
+                                        Xem sơ đồ ➔
+                                    </a>
+                                </div>
+
+                                <!-- Còn vé -->
+                                <a th:unless="${showtime.isSoldOut}"
+                                   th:href="@{/showtime/{id}/seats(id=${showtime.showtimeId})}"
+                                   class="group relative border border-stone-700 bg-stone-800/40
+                                          hover:border-amber-500 hover:bg-stone-800 hover:shadow-lg hover:shadow-amber-500/10
+                                          p-4 rounded-2xl flex flex-col items-center justify-center transition-all duration-200 cursor-pointer">
+                                    <p class="text-white font-black text-2xl leading-tight group-hover:text-amber-400 transition"
+                                       th:text="${#temporals.format(showtime.startTime, 'HH:mm')}"></p>
+                                    <p class="text-[11px] text-stone-400 mt-1"
+                                       th:text="${showtime.room.roomName}"></p>
+                                    <span class="mt-2.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/20 group-hover:bg-emerald-500/20 transition">
+                                        Còn vé
+                                    </span>
+                                </a>
+
+                            </th:block>
+                        </div>
+                    </div>
+                </th:block>
+
+            </div><!-- end unless empty -->
+        </div><!-- end space-y-5 -->
+
     </main>
 
     <div th:replace="~{fragments :: common_footer}"></div>
 
 </body>
-</html>
+
+<style>
+    .date-tab {
+        background: rgb(28 25 23); /* stone-900 */
+        border-color: rgb(68 64 60); /* stone-600 */
+        color: rgb(168 162 158);    /* stone-400 */
+    }
+    .date-tab:hover {
+        border-color: rgb(245 158 11); /* amber-500 */
+        color: #fff;
+    }
+    .date-tab.active {
+        background: linear-gradient(135deg, rgb(245 158 11), rgb(234 179 8));
+        border-color: transparent;
+        color: #000;
+        box-shadow: 0 4px 15px rgba(245,158,11,0.35);
+    }
+</style>
+
+<script>
+    (function () {
+        const tabs = document.querySelectorAll('.date-tab');
+        const groups = document.querySelectorAll('.showtime-group');
+
+        function showDate(date) {
+            groups.forEach(g => {
+                if (g.dataset.date === date) {
+                    g.classList.remove('hidden');
+                } else {
+                    g.classList.add('hidden');
+                }
+            });
+            tabs.forEach(t => {
+                if (t.dataset.date === date) {
+                    t.classList.add('active');
+                } else {
+                    t.classList.remove('active');
+                }
+            });
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => showDate(tab.dataset.date));
+        });
+    })();
+</script>
+
+</html>

@@ -15,8 +15,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Controller
 public class HomeController {
@@ -51,6 +56,19 @@ public class HomeController {
         // 3. Lấy danh sách phim để hiển thị
         List<Movie> movies = movieService.getAllMovies();
         model.addAttribute("movies", movies);
+
+        // 4. Lấy 5 phim SẮP CHIẾU gần nhất đưa lên Slider
+        List<Movie> sliderMovies = movies.stream()
+                .filter(m -> m.getStatus().name().equals("COMING_SOON"))
+                .sorted((m1, m2) -> {
+                    if (m1.getReleaseDate() == null && m2.getReleaseDate() == null) return 0;
+                    if (m1.getReleaseDate() == null) return 1;
+                    if (m2.getReleaseDate() == null) return -1;
+                    return m1.getReleaseDate().compareTo(m2.getReleaseDate());
+                })
+                .limit(5)
+                .collect(Collectors.toList());
+        model.addAttribute("sliderMovies", sliderMovies);
      
         return "index";
     }
@@ -66,9 +84,15 @@ public class HomeController {
         Movie movie = movieService.getMovieById(movieId);
         model.addAttribute("movie", movie);
 
-        // 2. Gọi hàm Service đã được xử lý lọc giờ và check Sold Out ở trên
+        // 2. Group showtimes by date (ngày → danh sách suất chiếu trong ngày đó)
         List<Showtime> showtimes = showtimeService.getAvailableShowtimesForMovie(movieId);
-        model.addAttribute("showtimes", showtimes);
+        Map<LocalDate, List<Showtime>> showtimesByDate = showtimes.stream()
+                .collect(Collectors.groupingBy(
+                        st -> st.getStartTime().toLocalDate(),
+                        TreeMap::new,
+                        Collectors.toList()
+                ));
+        model.addAttribute("showtimesByDate", showtimesByDate);
 
         // 3. Lấy thông tin user hiện tại để hiển thị trên header nếu cần
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

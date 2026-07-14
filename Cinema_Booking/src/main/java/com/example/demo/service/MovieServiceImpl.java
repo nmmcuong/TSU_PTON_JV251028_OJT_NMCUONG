@@ -7,9 +7,8 @@ import com.example.demo.repository.MovieRepository;
 import com.example.demo.repository.GenreRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class MovieServiceImpl implements MovieService {
@@ -42,14 +41,14 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Transactional
     public void saveOrUpdateMovie(Movie movie, List<Long> genreIds) {
-        Set<Genre> genres = new HashSet<>();
+        List<Genre> genres = new ArrayList<>();
         if (genreIds != null) {
             for (Long genreId : genreIds) {
                 genreRepository.findById(genreId).ifPresent(genres::add);
             }
         }
-        
-        movie.setGenres((List<Genre>) genres); 
+
+        movie.setGenres(genres);
         movieRepository.save(movie);
     }
 

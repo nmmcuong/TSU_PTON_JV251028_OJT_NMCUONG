@@ -42,6 +42,12 @@ public class Seat {
     private String seatType;
 
     /**
+     * Constructor mặc định bắt buộc cho JPA
+     */
+    public Seat() {
+    }
+
+    /**
      * Constructor tiện lợi để dùng khi seed data
      */
     public Seat(Room room, String seatCode, String seatType) {

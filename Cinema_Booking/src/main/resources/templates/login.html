@@ -19,7 +19,23 @@
             <div th:if="${param.logout}" class="mb-4 bg-green-100 text-green-700 p-3 rounded-lg text-xs font-medium text-center">
                 🚪 Bạn đã đăng xuất khỏi hệ thống thành công.
             </div>
+			<div th:if="${registerSuccess}" 
+			     class="mb-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-4 rounded-xl text-sm flex items-center gap-3 animate-fade-in">
+			    
+			    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+			    </svg>
+			    
+			    <span class="font-medium" th:text="${registerSuccess}"></span>
+			</div>
 
+			<div th:if="${registerError}" 
+			     class="mb-6 bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm flex items-center gap-3">
+			    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+			        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+			    </svg>
+			    <span class="font-medium" th:text="${registerError}"></span>
+			</div>
             <form th:action="@{/login}" method="POST" class="space-y-4">
                 <div>
                     <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-1">Tên đăng nhập</label>
@@ -42,6 +58,19 @@
                 </div>
             </form>
 
+            <div class="mt-6 flex items-center justify-center space-x-4">
+                <span class="h-px bg-gray-300 w-full"></span>
+                <span class="text-xs text-gray-400 font-medium whitespace-nowrap">HOẶC ĐĂNG NHẬP BẰNG</span>
+                <span class="h-px bg-gray-300 w-full"></span>
+            </div>
+
+            <div class="mt-4 flex justify-center">
+                <a href="/oauth2/authorization/google" 
+                   class="flex items-center justify-center gap-2 border border-stone-300 bg-white rounded-lg py-2.5 px-6 text-sm font-medium text-stone-700 hover:bg-stone-50 transition shadow-sm w-full max-w-xs">
+                    <i class="fa-brands fa-google text-red-500 text-base"></i> Google
+                </a>
+            </div>
+
             <div class="mt-6 text-center text-xs text-gray-500 border-t pt-4">
                 Chưa có tài khoản? 
                 <a th:href="@{/register}" class="text-amber-600 hover:underline font-bold ml-1">Đăng ký ngay</a>
@@ -51,5 +80,17 @@
 
     <div th:replace="~{fragments :: common_footer}"></div>
 
+	<script>
+	    // Tìm hộp thông báo thành công
+	    const alertBox = document.querySelector('.animate-fade-in');
+	    if (alertBox) {
+	        // Sau 5000ms (5 giây) thì tự động ẩn đi mượt mà
+	        setTimeout(() => {
+	            alertBox.style.transition = 'opacity 0.5s ease';
+	            alertBox.style.opacity = '0';
+	            setTimeout(() => alertBox.remove(), 500);
+	        }, 5000);
+	    }
+	</script>
 </body>
 </html>

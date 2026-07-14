@@ -21,7 +21,7 @@
              alt="Poster phim"
              class="w-28 h-40 object-cover rounded-xl shadow-lg border border-stone-700">
         <div th:unless="${showtime.movie.posterUrl != null and !showtime.movie.posterUrl.isEmpty()}"
-             class="w-28 h-40 bg-stone-800 rounded-xl flex items-center justify-center text-4xl">🎬</div>
+             class="w-28 h-40 bg-stone-800 rounded-xl flex items-center justify-center text-4xl text-stone-500"><i class="fa-solid fa-clapperboard"></i></div>
       </div>
 
       <!-- Thông tin phim + suất -->
@@ -31,13 +31,13 @@
 
         <div class="flex flex-wrap gap-4 text-sm">
           <span class="flex items-center gap-1.5 text-amber-400 font-semibold">
-            🏛️ <span th:text="${showtime.room.roomName}">Phòng 1</span>
+            <i class="fa-solid fa-building text-amber-500"></i> <span th:text="${showtime.room.roomName}">Phòng 1</span>
           </span>
           <span class="flex items-center gap-1.5 text-stone-300">
-            🕐 <span th:text="${#temporals.format(showtime.startTime, 'EEEE, dd/MM/yyyy HH:mm')}">Thứ Bảy, 11/07/2026 20:00</span>
+            <i class="fa-regular fa-clock text-amber-500"></i> <span th:text="${#temporals.format(showtime.startTime, 'EEEE, dd/MM/yyyy HH:mm')}">Thứ Bảy, 11/07/2026 20:00</span>
           </span>
           <span class="flex items-center gap-1.5 text-stone-300">
-            ⏱️ <span th:text="${showtime.movie.duration + ' phút'}">120 phút</span>
+            <i class="fa-solid fa-stopwatch text-amber-500"></i> <span th:text="${showtime.movie.duration + ' phút'}">120 phút</span>
           </span>
         </div>
 
@@ -49,11 +49,11 @@
           </div>
           <!-- Legend các loại ghế -->
           <div class="flex gap-2 text-xs flex-wrap">
-            <span class="px-2.5 py-1 rounded bg-stone-700 text-stone-300 border border-stone-600">⬜ Thường</span>
-            <span class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40">⭐ VIP (+50%)</span>
-            <span class="px-2.5 py-1 rounded bg-pink-500/20 text-pink-400 border border-pink-500/40">💑 Couple (+80%)</span>
-            <span class="px-2.5 py-1 rounded bg-red-900/60 text-red-400 border border-red-700">🔴 Đã bán</span>
-            <span class="px-2.5 py-1 rounded bg-green-600/30 text-green-400 border border-green-500/50">✅ Đang chọn</span>
+            <span class="px-2.5 py-1 rounded bg-stone-700 text-stone-300 border border-stone-600"><i class="fa-regular fa-square mr-1"></i>Thường</span>
+            <span class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40"><i class="fa-solid fa-star mr-1"></i>VIP (+50%)</span>
+            <span class="px-2.5 py-1 rounded bg-pink-500/20 text-pink-400 border border-pink-500/40"><i class="fa-solid fa-heart mr-1"></i>Couple (+80%)</span>
+            <span class="px-2.5 py-1 rounded bg-red-900/60 text-red-400 border border-red-700"><i class="fa-solid fa-circle-xmark mr-1"></i>Đã bán</span>
+            <span class="px-2.5 py-1 rounded bg-green-600/30 text-green-400 border border-green-500/50"><i class="fa-solid fa-circle-check mr-1"></i>Đang chọn</span>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@
     <!-- ===== CẢNH BÁO HẾT VÉ ===== -->
     <div th:if="${isSoldOut}"
          class="mb-6 bg-red-900/30 border border-red-700 text-red-300 p-5 rounded-xl text-center font-bold text-lg">
-      🎫 Suất chiếu này đã BÁN HẾT VÉ
+      <i class="fa-solid fa-ticket"></i> Suất chiếu này đã BÁN HẾT VÉ
     </div>
 
     <!-- ===== SƠ ĐỒ GHẾ ===== -->
@@ -176,9 +176,9 @@
               <select name="paymentMethod" id="paymentMethod"
                       class="bg-stone-800 border border-stone-600 text-stone-300 text-sm rounded-lg
                              px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                <option value="CASH">💵 Tiền mặt tại quầy</option>
-                <option value="BANK_TRANSFER">🏦 Chuyển khoản</option>
-                <option value="MOMO">📱 MoMo</option>
+                <option value="CASH"><i class="fa-solid fa-money-bill"></i> Tiền mặt tại quầy</option>
+                <option value="BANK_TRANSFER"><i class="fa-solid fa-building-columns"></i> Chuyển khoản</option>
+                <option value="MOMO"><i class="fa-solid fa-mobile-screen"></i> MoMo</option>
               </select>
             </div>
 
@@ -195,7 +195,7 @@
                              hover:enabled:from-amber-400 hover:enabled:to-yellow-300
                              hover:enabled:shadow-amber-500/30 hover:enabled:shadow-xl
                              active:enabled:scale-95 text-sm tracking-wide uppercase">
-                🎟️ Xác nhận đặt vé
+                <i class="fa-solid fa-ticket"></i> Xác nhận đặt vé
               </button>
             </div>
           </div>
@@ -211,6 +211,61 @@
 </main>
 
 <div th:replace="~{fragments :: common_footer}"></div>
+
+<!-- ===== MODAL XÁC NHẬN ĐẶT VÉ ===== -->
+<div id="confirmModal" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4">
+  <!-- Overlay -->
+  <div id="modalOverlay" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+
+  <!-- Modal Box -->
+  <div class="relative bg-stone-900 border border-stone-700 rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fadeIn">
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-5">
+      <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+        <i class="fa-solid fa-ticket text-amber-400 text-lg"></i>
+      </div>
+      <div>
+        <h3 class="text-white font-bold text-lg">Xác nhận đặt vé</h3>
+        <p class="text-stone-400 text-xs">Vui lòng kiểm tra lại thông tin trước khi thanh toán</p>
+      </div>
+    </div>
+
+    <!-- Thông tin ghế -->
+    <div class="bg-stone-800 rounded-xl p-4 mb-4 space-y-3">
+      <div class="flex justify-between items-start">
+        <span class="text-stone-400 text-sm"><i class="fa-solid fa-couch mr-2"></i>Ghế đã chọn</span>
+        <span id="modalSeatList" class="text-amber-400 font-semibold text-sm text-right max-w-[60%]"></span>
+      </div>
+      <div class="flex justify-between items-center border-t border-stone-700 pt-3">
+        <span class="text-stone-400 text-sm"><i class="fa-solid fa-wallet mr-2"></i>Phương thức</span>
+        <span id="modalPayment" class="text-stone-200 text-sm font-medium"></span>
+      </div>
+      <div class="flex justify-between items-center border-t border-stone-700 pt-3">
+        <span class="text-stone-400 text-sm font-medium">Tổng tiền thanh toán</span>
+        <span id="modalTotal" class="text-green-400 font-black text-xl"></span>
+      </div>
+    </div>
+
+    <p class="text-stone-500 text-xs text-center mb-5">
+      <i class="fa-solid fa-circle-info mr-1"></i>
+      Sau khi xác nhận, vé sẽ được giữ và không thể hoàn tiền.
+    </p>
+
+    <!-- Nút hành động -->
+    <div class="flex gap-3">
+      <button id="modalCancel"
+              class="flex-1 border border-stone-600 text-stone-300 hover:bg-stone-800 hover:text-white
+                     py-3 rounded-xl text-sm font-semibold transition">
+        <i class="fa-solid fa-arrow-left mr-1"></i> Quay lại chọn ghế
+      </button>
+      <button id="modalConfirm"
+              class="flex-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300
+                     text-black font-black py-3 rounded-xl text-sm transition shadow-lg shadow-amber-500/20">
+        <i class="fa-solid fa-check mr-1"></i> Xác nhận & Thanh toán
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== JAVASCRIPT XỬ LÝ CHỌN GHẾ ===== -->
 <script>
@@ -306,26 +361,56 @@
       });
     });
 
-    // Xác nhận trước khi submit
-    document.getElementById('bookingForm').addEventListener('submit', function (e) {
+    // Xác nhận trước khi submit bằng custom modal
+    const bookingForm = document.getElementById('bookingForm');
+    const confirmModal = document.getElementById('confirmModal');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalCancel = document.getElementById('modalCancel');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const modalSeatList = document.getElementById('modalSeatList');
+    const modalTotal = document.getElementById('modalTotal');
+    const modalPayment = document.getElementById('modalPayment');
+
+    const paymentLabels = {
+      'CASH': '<i class="fa-solid fa-money-bill text-green-400 mr-1"></i> Tiền mặt tại quầy',
+      'BANK_TRANSFER': '<i class="fa-solid fa-building-columns text-blue-400 mr-1"></i> Chuyển khoản',
+      'MOMO': '<i class="fa-solid fa-mobile-screen text-pink-400 mr-1"></i> Ví MoMo'
+    };
+
+    bookingForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
       if (selectedSeats.size === 0) {
-        e.preventDefault();
         alert('Vui lòng chọn ít nhất 1 ghế trước khi tiếp tục!');
         return;
       }
 
+      // Điền thông tin vào modal
       const seatList = Array.from(selectedSeats.keys()).join(', ');
       const total = Array.from(selectedSeats.values()).reduce((a, b) => a + b, 0);
-      const confirmed = confirm(
-        '🎟️ Xác nhận đặt vé?\n\n' +
-        'Ghế: ' + seatList + '\n' +
-        'Tổng tiền: ' + formatMoney(total) + ' đ\n\n' +
-        'Nhấn OK để thanh toán.'
-      );
+      const paymentVal = document.getElementById('paymentMethod').value;
 
-      if (!confirmed) {
-        e.preventDefault();
-      }
+      modalSeatList.textContent = seatList;
+      modalTotal.textContent = formatMoney(total) + ' đ';
+      modalPayment.innerHTML = paymentLabels[paymentVal] || paymentVal;
+
+      // Hiện modal
+      confirmModal.classList.remove('hidden');
+      confirmModal.classList.add('flex');
+    });
+
+    // Hủy
+    function closeModal() {
+      confirmModal.classList.add('hidden');
+      confirmModal.classList.remove('flex');
+    }
+    modalCancel.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', closeModal);
+
+    // Xác nhận → submit thật
+    modalConfirm.addEventListener('click', function () {
+      closeModal();
+      bookingForm.submit();
     });
 
     // Khởi tạo UI

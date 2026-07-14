@@ -4,5 +4,6 @@ public enum BookingStatus {
 	PENDING,    // Đang chờ thanh toán
     CONFIRMED,  // Đặt vé thành công (Đã xác nhận)
     FAILED,     // Thanh toán thất bại
-    CANCELLED   // Đã hủy đơn
+    CANCELLED,  // Đã hủy đơn
+    USED        // Đã soát vé (nhân viên xác nhận vào rạp)
 }

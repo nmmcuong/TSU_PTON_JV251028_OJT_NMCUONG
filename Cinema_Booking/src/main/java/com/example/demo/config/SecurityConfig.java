@@ -7,38 +7,35 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Bật tính năng phân quyền bằng Annotation (@PreAuthorize) tại tầng Controller nếu cần
+@EnableMethodSecurity 
 public class SecurityConfig {
 
-    // Inject bằng interface để tránh type mismatch với setUserDetailsService()
+   
     private final UserDetailsService userDetailsService;
+    private final com.example.demo.service.CustomOAuth2UserService customOAuth2UserService;
+    private final PasswordEncoder passwordEncoder;
 
-    public SecurityConfig(UserDetailsService userDetailsService) {
+    public SecurityConfig(UserDetailsService userDetailsService,
+                          com.example.demo.service.CustomOAuth2UserService customOAuth2UserService,
+                          PasswordEncoder passwordEncoder) {
         this.userDetailsService = userDetailsService;
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    // PasswordEncoder được khai báo tại AppConfig.java để tránh Circular Dependency
 
-    /**
-     * CẤU HÌNH QUAN TRỌNG: Kết nối CustomUserDetailsService + BCrypt vào Spring Security.
-     * Spring Security 6.x: DaoAuthenticationProvider yêu cầu truyền UserDetailsService vào constructor.
-     * Thiếu bean này, Spring Security KHÔNG thể xác minh mật khẩu BCrypt khi đăng nhập.
-     */
+   
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        // Spring Security 6.x: dùng constructor có tham số thay vì no-arg + setter
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        // Chỉ định thuật toán hash để so sánh mật khẩu (BCrypt)
-        provider.setPasswordEncoder(passwordEncoder());
+        
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);      
+        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 
@@ -65,6 +62,13 @@ public class SecurityConfig {
                 .defaultSuccessUrl("/", true) // Luồng điều hướng thông minh sau khi đăng nhập thành công
                 .failureUrl("/login?error=true") // Redirect khi sai mật khẩu
                 .permitAll()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .loginPage("/login")
+                .defaultSuccessUrl("/", true)
+                .userInfoEndpoint(userInfo -> userInfo
+                    .userService(customOAuth2UserService)
+                )
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
